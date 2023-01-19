@@ -58,12 +58,36 @@ inline __m128 & operator *= (__m128 & a, __m128 b){a = a * b; return a;}
 inline __m128 & operator /= (__m128 & a, __m128 b){a = a / b; return a;}
 #endif
 
+struct _N_3DArray_v4sf
+{
+	unsigned int n_max, x_max, y_max, z_max;
+	f4vector *array;
+
+	inline f4vector& operator() (const unsigned int n, const unsigned int x, const unsigned int y, const unsigned int z) {
+                return array[
+                        x * (y_max * z_max * n_max) +
+                        y * (z_max * n_max) +
+                        z * (n_max) +
+                        n
+                ];
+        }
+        inline f4vector operator() (const unsigned int &n, const unsigned int &x, const unsigned int &y, const unsigned int z) const {
+                return array[
+                        x * (y_max * z_max * n_max) +
+                        y * (z_max * n_max) +
+                        z * (n_max) +
+                        n
+                ];
+        }
+};
+typedef struct _N_3DArray_v4sf N_3DArray_v4sf;
+
 void Delete1DArray_v4sf(f4vector* array);
 void Delete3DArray_v4sf(f4vector*** array, const unsigned int* numLines);
 void Delete_N_3DArray_v4sf(f4vector**** array, const unsigned int* numLines);
 f4vector* Create1DArray_v4sf(const unsigned int numLines);
 f4vector*** Create3DArray_v4sf(const unsigned int* numLines);
-f4vector**** Create_N_3DArray_v4sf(const unsigned int* numLines);
+N_3DArray_v4sf Create_N_3DArray_Flat_v4sf(const unsigned int* numLines);
 
 // *************************************************************************************
 // templates

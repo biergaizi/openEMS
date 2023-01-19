@@ -107,14 +107,14 @@ void Engine_Ext_CylinderMultiGrid::SyncVoltages()
 		for (pos[2]=0; pos[2]<m_Eng_MG->numVectors; ++pos[2])
 		{
 			//r - direczion
-			m_InnerEng->f4_volt[0][pos[0]][pos1_half][pos[2]].v = v_null.v;
+			m_InnerEng->f4_volt(0, pos[0], pos1_half, pos[2]).v = v_null.v;
 
 			//z - direction
-			m_InnerEng->f4_volt[2][pos[0]][pos1_half][pos[2]].v = m_Eng_MG->f4_volt[2][pos[0]][pos[1]][pos[2]].v;
+			m_InnerEng->f4_volt(2, pos[0], pos1_half, pos[2]).v = m_Eng_MG->f4_volt(2, pos[0], pos[1], pos[2]).v;
 
 			//alpha - direction
-			m_InnerEng->f4_volt[1][pos[0]][pos1_half][pos[2]].v  = m_Eng_MG->f4_volt[1][pos[0]][pos[1]][pos[2]].v;
-			m_InnerEng->f4_volt[1][pos[0]][pos1_half][pos[2]].v += m_Eng_MG->f4_volt[1][pos[0]][pos[1]+1][pos[2]].v;
+			m_InnerEng->f4_volt(1, pos[0], pos1_half, pos[2]).v  = m_Eng_MG->f4_volt(1, pos[0], pos[1], pos[2]).v;
+			m_InnerEng->f4_volt(1, pos[0], pos1_half, pos[2]).v += m_Eng_MG->f4_volt(1, pos[0], pos[1]+1, pos[2]).v;
 		}
 	}
 }
