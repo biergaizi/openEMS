@@ -21,6 +21,11 @@
 #include "operator.h"
 #include "tools/array_ops.h"
 
+#define f4_vv (*f4_vv_ptr)
+#define f4_vi (*f4_vi_ptr)
+#define f4_iv (*f4_iv_ptr)
+#define f4_ii (*f4_ii_ptr)
+
 class Operator_sse : public Operator
 {
 	friend class Engine_Interface_SSE_FDTD;
@@ -54,10 +59,10 @@ protected:
 
 	// engine/post-proc needs access
 public:
-	N_3DArray_v4sf f4_vv; //calc new voltage from old voltage
-	N_3DArray_v4sf f4_vi; //calc new voltage from old current
-	N_3DArray_v4sf f4_iv; //calc new current from old current
-	N_3DArray_v4sf f4_ii; //calc new current from old voltage
+	N_3DArray_v4sf *f4_vv_ptr; //calc new voltage from old voltage
+	N_3DArray_v4sf *f4_vi_ptr; //calc new voltage from old current
+	N_3DArray_v4sf *f4_iv_ptr; //calc new current from old current
+	N_3DArray_v4sf *f4_ii_ptr; //calc new current from old voltage
 };
 
 #endif // OPERATOR_SSE_H

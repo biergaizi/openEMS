@@ -87,7 +87,7 @@ void Delete3DArray_v4sf(f4vector*** array, const unsigned int* numLines);
 void Delete_N_3DArray_v4sf(f4vector**** array, const unsigned int* numLines);
 f4vector* Create1DArray_v4sf(const unsigned int numLines);
 f4vector*** Create3DArray_v4sf(const unsigned int* numLines);
-N_3DArray_v4sf Create_N_3DArray_Flat_v4sf(const unsigned int* numLines);
+N_3DArray_v4sf *Create_N_3DArray_Flat_v4sf(const unsigned int* numLines);
 
 // *************************************************************************************
 // templates

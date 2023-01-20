@@ -82,10 +82,10 @@ void Operator_sse::InitOperator()
 	//Delete_N_3DArray_v4sf(f4_vi,numLines);
 	//Delete_N_3DArray_v4sf(f4_iv,numLines);
 	//Delete_N_3DArray_v4sf(f4_ii,numLines);
-	f4_vv = Create_N_3DArray_Flat_v4sf(numLines);
-	f4_vi = Create_N_3DArray_Flat_v4sf(numLines);
-	f4_iv = Create_N_3DArray_Flat_v4sf(numLines);
-	f4_ii = Create_N_3DArray_Flat_v4sf(numLines);
+	f4_vv_ptr = Create_N_3DArray_Flat_v4sf(numLines);
+	f4_vi_ptr = Create_N_3DArray_Flat_v4sf(numLines);
+	f4_iv_ptr = Create_N_3DArray_Flat_v4sf(numLines);
+	f4_ii_ptr = Create_N_3DArray_Flat_v4sf(numLines);
 
 	numVectors =  ceil((double)numLines[2]/4.0);
 }

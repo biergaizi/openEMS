@@ -21,6 +21,9 @@
 #include "engine.h"
 #include "operator_sse.h"
 
+#define f4_volt (*f4_volt_ptr)
+#define f4_curr (*f4_curr_ptr)
+
 class Engine_sse : public Engine
 {
 public:
@@ -53,8 +56,8 @@ protected:
 	unsigned int numVectors;
 
 public: //public access to the sse arrays for efficient extensions access... use careful...
-	N_3DArray_v4sf f4_volt;
-	N_3DArray_v4sf f4_curr;
+	N_3DArray_v4sf *f4_volt_ptr;
+	N_3DArray_v4sf *f4_curr_ptr;
 };
 
 #endif // ENGINE_SSE_H

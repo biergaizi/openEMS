@@ -19,6 +19,9 @@
 #include "engine_ext_cylindermultigrid.h"
 #include "FDTD/engine_cylindermultigrid.h"
 
+#define m_InnerEng_f4_volt (*(m_InnerEng->f4_volt_ptr))
+#define m_Eng_MG_f4_volt (*(m_Eng_MG->f4_volt_ptr))
+
 Engine_Ext_CylinderMultiGrid::Engine_Ext_CylinderMultiGrid(Operator_Extension* op_ext, bool isBase) : Engine_Extension(op_ext)
 {
 	m_IsBase = isBase;
@@ -107,14 +110,14 @@ void Engine_Ext_CylinderMultiGrid::SyncVoltages()
 		for (pos[2]=0; pos[2]<m_Eng_MG->numVectors; ++pos[2])
 		{
 			//r - direczion
-			m_InnerEng->f4_volt(0, pos[0], pos1_half, pos[2]).v = v_null.v;
+			m_InnerEng_f4_volt(0, pos[0], pos1_half, pos[2]).v = v_null.v;
 
 			//z - direction
-			m_InnerEng->f4_volt(2, pos[0], pos1_half, pos[2]).v = m_Eng_MG->f4_volt(2, pos[0], pos[1], pos[2]).v;
+			m_InnerEng_f4_volt(2, pos[0], pos1_half, pos[2]).v = m_Eng_MG_f4_volt(2, pos[0], pos[1], pos[2]).v;
 
 			//alpha - direction
-			m_InnerEng->f4_volt(1, pos[0], pos1_half, pos[2]).v  = m_Eng_MG->f4_volt(1, pos[0], pos[1], pos[2]).v;
-			m_InnerEng->f4_volt(1, pos[0], pos1_half, pos[2]).v += m_Eng_MG->f4_volt(1, pos[0], pos[1]+1, pos[2]).v;
+			m_InnerEng_f4_volt(1, pos[0], pos1_half, pos[2]).v  = m_Eng_MG_f4_volt(1, pos[0], pos[1], pos[2]).v;
+			m_InnerEng_f4_volt(1, pos[0], pos1_half, pos[2]).v += m_Eng_MG_f4_volt(1, pos[0], pos[1]+1, pos[2]).v;
 		}
 	}
 }

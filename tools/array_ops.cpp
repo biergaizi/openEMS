@@ -125,26 +125,32 @@ f4vector*** Create3DArray_v4sf(const unsigned int* numLines)
 	return array;
 }
 
-N_3DArray_v4sf Create_N_3DArray_Flat_v4sf(const unsigned int* numLines)
+N_3DArray_v4sf *Create_N_3DArray_Flat_v4sf(const unsigned int* numLines)
 {
-	N_3DArray_v4sf n_3d_array_v4sf;
-	n_3d_array_v4sf.n_max = 3;
-	n_3d_array_v4sf.x_max = numLines[0];
-	n_3d_array_v4sf.y_max = numLines[1];
-	n_3d_array_v4sf.z_max = ceil((double)numLines[2] / 4.0);
-
-
-	size_t size = F4VECTOR_SIZE * n_3d_array_v4sf.n_max *
-				      n_3d_array_v4sf.x_max *
-				      n_3d_array_v4sf.y_max *
-				      n_3d_array_v4sf.z_max;
-
-	if (MEMALIGN( (void**)&n_3d_array_v4sf.array, 16, size))
+	N_3DArray_v4sf *n_3d_array_v4sf;
+	if (MEMALIGN( (void**)&n_3d_array_v4sf, 16, sizeof(N_3DArray_v4sf)))
 	{
 		cerr << "cannot allocate aligned memory" << endl;
 		exit(3);
 	}
-	memset(n_3d_array_v4sf.array, 0, size);
+
+	n_3d_array_v4sf->n_max = 3;
+	n_3d_array_v4sf->x_max = numLines[0];
+	n_3d_array_v4sf->y_max = numLines[1];
+	n_3d_array_v4sf->z_max = ceil((double)numLines[2] / 4.0);
+
+
+	size_t size = F4VECTOR_SIZE * 3 *
+				      n_3d_array_v4sf->x_max *
+				      n_3d_array_v4sf->y_max *
+				      n_3d_array_v4sf->z_max;
+
+	if (MEMALIGN( (void**)&n_3d_array_v4sf->array, 16, size))
+	{
+		cerr << "cannot allocate aligned memory" << endl;
+		exit(3);
+	}
+	memset(n_3d_array_v4sf->array, 0, size);
 	return n_3d_array_v4sf;
 }
 

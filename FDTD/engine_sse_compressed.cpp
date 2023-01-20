@@ -37,6 +37,9 @@ Engine_SSE_Compressed::~Engine_SSE_Compressed()
 {
 }
 
+#define f4_volt (*f4_volt_ptr)
+#define f4_curr (*f4_curr_ptr)
+
 void Engine_SSE_Compressed::UpdateVoltages(unsigned int startX, unsigned int numX)
 {
 	unsigned int pos[3];
