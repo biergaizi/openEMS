@@ -135,7 +135,7 @@ void Engine_CylinderMultiGrid::InterpolVoltChild2Base(unsigned int rPos)
 {
 	//interpolate voltages from child engine to the base engine...
 	N_3DArray_v4sf &f4_volt = *f4_volt_ptr;
-	N_3DArray_v4sf &m_InnerEngine_f4_volt *m_InnerEngine->f4_volt_ptr;
+	N_3DArray_v4sf &m_InnerEngine_f4_volt = *m_InnerEngine->f4_volt_ptr;
 
 	unsigned int pos[3];
 	pos[0] = rPos;
@@ -162,7 +162,7 @@ void Engine_CylinderMultiGrid::InterpolCurrChild2Base(unsigned int rPos)
 {
 	//interpolate voltages from child engine to the base engine...
 	N_3DArray_v4sf &f4_curr = *f4_curr_ptr;
-	N_3DArray_v4sf &m_InnerEngine_f4_curr *m_InnerEngine->f4_curr_ptr;
+	N_3DArray_v4sf &m_InnerEngine_f4_curr = *m_InnerEngine->f4_curr_ptr;
 
 	unsigned int pos[3];
 	pos[0] = rPos;
