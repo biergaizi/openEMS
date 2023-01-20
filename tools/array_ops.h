@@ -60,9 +60,6 @@ inline __m128 & operator /= (__m128 & a, __m128 b){a = a / b; return a;}
 
 struct _N_3DArray_v4sf
 {
-	unsigned int n_max, x_max, y_max, z_max;
-	f4vector *array;
-
 	inline f4vector& operator() (const unsigned int n, const unsigned int x, const unsigned int y, const unsigned int z) {
                 return array[
                         x * (y_max * z_max * n_max) +
@@ -79,6 +76,17 @@ struct _N_3DArray_v4sf
                         n
                 ];
         }
+	unsigned int n_max, x_max, y_max, z_max;
+
+	// This is a flexible array member, the actual size would be
+	// determined by the actual size used to call malloc (actually
+	// posix_memalign() in the case of openEMS, in the function
+	// Create_N_3DArray_Flat_v4sf().
+	//
+	// It's technically a standard-nonconforming undefined behavior,
+	// but is a well-known technique and it's important here to
+	// avoid the cost of dereferencing
+	f4vector array[1];
 };
 typedef struct _N_3DArray_v4sf N_3DArray_v4sf;
 
