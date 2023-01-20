@@ -37,14 +37,13 @@ Engine_SSE_Compressed::~Engine_SSE_Compressed()
 {
 }
 
-#define f4_volt (*f4_volt_ptr)
-#define f4_curr (*f4_curr_ptr)
-
 void Engine_SSE_Compressed::UpdateVoltages(unsigned int startX, unsigned int numX)
 {
 	unsigned int pos[3];
 	bool shift[2];
 	f4vector temp;
+	N_3DArray_v4sf &f4_volt = *f4_volt_ptr;
+	N_3DArray_v4sf &f4_curr = *f4_curr_ptr;
 
 	pos[0] = startX;
 	unsigned int index=0;
@@ -154,6 +153,8 @@ void Engine_SSE_Compressed::UpdateCurrents(unsigned int startX, unsigned int num
 {
 	unsigned int pos[3];
 	f4vector temp;
+	N_3DArray_v4sf &f4_volt = *f4_volt_ptr;
+	N_3DArray_v4sf &f4_curr = *f4_curr_ptr;
 
 	pos[0] = startX;
 	unsigned int index;

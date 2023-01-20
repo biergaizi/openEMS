@@ -60,4 +60,7 @@ public: //public access to the sse arrays for efficient extensions access... use
 	N_3DArray_v4sf *f4_curr_ptr;
 };
 
+#undef f4_volt
+#undef f4_curr
+
 #endif // ENGINE_SSE_H
