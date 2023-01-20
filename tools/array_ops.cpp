@@ -150,7 +150,7 @@ N_3DArray_v4sf *Create_N_3DArray_Flat_v4sf(const unsigned int* numLines)
 		cerr << "cannot allocate aligned memory" << endl;
 		exit(3);
 	}
-	memset(N_3DArray_v4sf, 0, size);
+	memset(n_3d_array_v4sf, 0, size);
 
 	n_3d_array_v4sf->n_max = n_max;
 	n_3d_array_v4sf->x_max = x_max;
