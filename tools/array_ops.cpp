@@ -17,6 +17,7 @@
 
 #include "array_ops.h"
 #include <ostream>
+#include <string.h>
 
 using namespace std;
 
@@ -57,12 +58,14 @@ void Delete3DArray_v4sf(f4vector*** array, const unsigned int* numLines)
 void Delete_N_3DArray_v4sf(f4vector**** array, const unsigned int* numLines)
 {
 	if (array==NULL) return;
+#if 0
 	for (int n=0; n<3; ++n)
 	{
 		Delete3DArray_v4sf(array[n],numLines);
 	}
 	FREE( array );
 	//delete[] array;
+#endif
 }
 
 f4vector* Create1DArray_v4sf(const unsigned int numLines)
@@ -126,17 +129,37 @@ f4vector*** Create3DArray_v4sf(const unsigned int* numLines)
 
 f4vector**** Create_N_3DArray_v4sf(const unsigned int* numLines)
 {
-	f4vector**** array=NULL;
-	if (MEMALIGN( (void**)&array, 16, F4VECTOR_SIZE*3 ))
+	unsigned int n_max = 3;
+	unsigned int x_max = numLines[0];
+	unsigned int y_max = numLines[1];
+	unsigned int z_max = ceil((double)numLines[2] / 4.0);
+
+	// create the N-3D array itself
+	f4vector* array = NULL;
+	size_t size = sizeof(f4vector) * n_max * x_max * y_max * z_max;
+	if (MEMALIGN( (void**)&array, 16, size ) )
 	{
 		cerr << "cannot allocate aligned memory" << endl;
 		exit(3);
 	}
-	//array = new f4vector***[3];
-	for (int n=0; n<3; ++n)
-	{
-		array[n]=Create3DArray_v4sf(numLines);
+	memset(array, 0, size);
+
+	// create an iliffe vector to the N-3D array to allow
+	// array[n][x][y][z] access
+	f4vector**** array_ptr = NULL;
+	array_ptr = (f4vector****) malloc(sizeof(f4vector ***) * n_max);
+	for (unsigned int n = 0; n < n_max; n++) {
+		array_ptr[n] = (f4vector***) malloc(sizeof(f4vector **) * x_max);
+		for (unsigned int x = 0; x < x_max; x++) {
+			array_ptr[n][x] = (f4vector **) malloc(sizeof(f4vector *) * y_max);
+			for (unsigned int y = 0; y < y_max; y++) {
+				size_t offset = n * (x_max * y_max * z_max) +
+						x * (y_max * z_max) +
+						y * (z_max);
+				array_ptr[n][x][y] = &array[offset];
+			}
+		}
 	}
-	return array;
+	return array_ptr;
 }
 
