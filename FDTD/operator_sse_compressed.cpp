@@ -131,10 +131,10 @@ bool Operator_SSE_Compressed::CompressOperator()
 		{
 			for (pos[2]=0; pos[2]<numVectors; ++pos[2])
 			{
-				f4vector vv[3] = { f4_vv[0][pos[0]][pos[1]][pos[2]], f4_vv[1][pos[0]][pos[1]][pos[2]], f4_vv[2][pos[0]][pos[1]][pos[2]] };
-				f4vector vi[3] = { f4_vi[0][pos[0]][pos[1]][pos[2]], f4_vi[1][pos[0]][pos[1]][pos[2]], f4_vi[2][pos[0]][pos[1]][pos[2]] };
-				f4vector iv[3] = { f4_iv[0][pos[0]][pos[1]][pos[2]], f4_iv[1][pos[0]][pos[1]][pos[2]], f4_iv[2][pos[0]][pos[1]][pos[2]] };
-				f4vector ii[3] = { f4_ii[0][pos[0]][pos[1]][pos[2]], f4_ii[1][pos[0]][pos[1]][pos[2]], f4_ii[2][pos[0]][pos[1]][pos[2]] };
+				f4vector vv[3] = { f4_vv(0, pos[0], pos[1], pos[2]), f4_vv(1, pos[0], pos[1], pos[2]), f4_vv(2, pos[0], pos[1], pos[2]) };
+				f4vector vi[3] = { f4_vi(0, pos[0], pos[1], pos[2]), f4_vi(1, pos[0], pos[1], pos[2]), f4_vi(2, pos[0], pos[1], pos[2]) };
+				f4vector iv[3] = { f4_iv(0, pos[0], pos[1], pos[2]), f4_iv(1, pos[0], pos[1], pos[2]), f4_iv(2, pos[0], pos[1], pos[2]) };
+				f4vector ii[3] = { f4_ii(0, pos[0], pos[1], pos[2]), f4_ii(1, pos[0], pos[1], pos[2]), f4_ii(2, pos[0], pos[1], pos[2]) };
 				SSE_coeff c( vv, vi, iv, ii );
 
 				map<SSE_coeff,unsigned int>::iterator it;
@@ -163,14 +163,14 @@ bool Operator_SSE_Compressed::CompressOperator()
 		}
 	}
 
-	Delete_N_3DArray_v4sf(f4_vv,numLines);
-	Delete_N_3DArray_v4sf(f4_vi,numLines);
-	Delete_N_3DArray_v4sf(f4_iv,numLines);
-	Delete_N_3DArray_v4sf(f4_ii,numLines);
-	f4_vv = 0;
-	f4_vi = 0;
-	f4_iv = 0;
-	f4_ii = 0;
+	Delete_N_3DArray_Flat_v4sf(_f4_vv,numLines);
+	Delete_N_3DArray_Flat_v4sf(_f4_vi,numLines);
+	Delete_N_3DArray_Flat_v4sf(_f4_iv,numLines);
+	Delete_N_3DArray_Flat_v4sf(_f4_ii,numLines);
+	_f4_vv = 0;
+	_f4_vi = 0;
+	_f4_iv = 0;
+	_f4_ii = 0;
 
 	return true;
 }

@@ -30,10 +30,10 @@ Operator_sse* Operator_sse::New()
 
 Operator_sse::Operator_sse() : Operator()
 {
-	f4_vv = 0;
-	f4_vi = 0;
-	f4_iv = 0;
-	f4_ii = 0;
+	_f4_vv = 0;
+	_f4_vi = 0;
+	_f4_iv = 0;
+	_f4_ii = 0;
 }
 
 Operator_sse::~Operator_sse()
@@ -51,22 +51,22 @@ Engine* Operator_sse::CreateEngine()
 void Operator_sse::Init()
 {
 	Operator::Init();
-	f4_vv = 0;
-	f4_vi = 0;
-	f4_iv = 0;
-	f4_ii = 0;
+	_f4_vv = 0;
+	_f4_vi = 0;
+	_f4_iv = 0;
+	_f4_ii = 0;
 }
 
 void Operator_sse::Delete()
 {
-	Delete_N_3DArray_v4sf(f4_vv,numLines);
-	Delete_N_3DArray_v4sf(f4_vi,numLines);
-	Delete_N_3DArray_v4sf(f4_iv,numLines);
-	Delete_N_3DArray_v4sf(f4_ii,numLines);
-	f4_vv = 0;
-	f4_vi = 0;
-	f4_iv = 0;
-	f4_ii = 0;
+	Delete_N_3DArray_Flat_v4sf(_f4_vv,numLines);
+	Delete_N_3DArray_Flat_v4sf(_f4_vi,numLines);
+	Delete_N_3DArray_Flat_v4sf(_f4_iv,numLines);
+	Delete_N_3DArray_Flat_v4sf(_f4_ii,numLines);
+	_f4_vv = 0;
+	_f4_vi = 0;
+	_f4_iv = 0;
+	_f4_ii = 0;
 }
 
 void Operator_sse::Reset()
@@ -78,14 +78,17 @@ void Operator_sse::Reset()
 
 void Operator_sse::InitOperator()
 {
-	Delete_N_3DArray_v4sf(f4_vv,numLines);
-	Delete_N_3DArray_v4sf(f4_vi,numLines);
-	Delete_N_3DArray_v4sf(f4_iv,numLines);
-	Delete_N_3DArray_v4sf(f4_ii,numLines);
-	f4_vv = Create_N_3DArray_v4sf(numLines);
-	f4_vi = Create_N_3DArray_v4sf(numLines);
-	f4_iv = Create_N_3DArray_v4sf(numLines);
-	f4_ii = Create_N_3DArray_v4sf(numLines);
+	Delete_N_3DArray_Flat_v4sf(_f4_vv,numLines);
+	Delete_N_3DArray_Flat_v4sf(_f4_vi,numLines);
+	Delete_N_3DArray_Flat_v4sf(_f4_iv,numLines);
+	Delete_N_3DArray_Flat_v4sf(_f4_ii,numLines);
+	_f4_vv = Create_N_3DArray_Flat_v4sf(numLines);
+	_f4_vi = Create_N_3DArray_Flat_v4sf(numLines);
+	_f4_iv = Create_N_3DArray_Flat_v4sf(numLines);
+	_f4_ii = Create_N_3DArray_Flat_v4sf(numLines);
 
 	numVectors =  ceil((double)numLines[2]/4.0);
+	x_max = numLines[0];
+	y_max = numLines[1];
+	z_max = numVectors;
 }
