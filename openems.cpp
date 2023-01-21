@@ -81,7 +81,7 @@ openEMS::openEMS()
 	m_OverSampling = 4;
 	m_CellConstantMaterial=false;
 
-	m_engine = EngineType_SSE; //default engine type
+	m_engine = EngineType_Multithreaded; //default engine type
 	m_engine_numThreads = 0;
 
 	m_Abort = false;
