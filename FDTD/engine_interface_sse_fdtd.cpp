@@ -20,24 +20,25 @@
 #define x_max m_Eng_SSE->Engine_sse::x_max
 #define y_max m_Eng_SSE->Engine_sse::y_max
 #define z_max m_Eng_SSE->Engine_sse::z_max
-#define f4_volt(n, x, y, z)			\
-	(m_Eng_SSE->Engine_sse::_f4_volt	\
-		[				\
-		 n * (x_max * y_max * z_max) +  \
-		 x * (y_max * z_max) +		\
-		 y * (z_max) +			\
-		 z				\
-		]				\
+#define n_max 3
+#define f4_volt(n, x, y, z)				\
+	(m_Eng_SSE->Engine_sse::_f4_volt		\
+		[					\
+		 (x) * (y_max * z_max * n_max) +	\
+		 (y) * (z_max * n_max) +		\
+		 (z) * (n_max) +			\
+		 (n)					\
+		]					\
 	)
 
-#define f4_curr(n, x, y, z)			\
-	(m_Eng_SSE->Engine_sse::_f4_curr	\
-		[				\
-		 n * (x_max * y_max * z_max) +  \
-		 x * (y_max * z_max) +		\
-		 y * (z_max) +			\
-		 z				\
-		]				\
+#define f4_curr(n, x, y, z)				\
+	(m_Eng_SSE->Engine_sse::_f4_curr		\
+		[					\
+		 (x) * (y_max * z_max * n_max) +  	\
+		 (y) * (z_max * n_max) +		\
+		 (z) * (n_max) +			\
+		 (n)					\
+		]					\
 	)
 
 Engine_Interface_SSE_FDTD::Engine_Interface_SSE_FDTD(Operator_sse* op) : Engine_Interface_FDTD(op)

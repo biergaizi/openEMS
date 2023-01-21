@@ -21,23 +21,24 @@
 #include "engine.h"
 #include "operator_sse.h"
 
+#define n_max 3
 #define f4_volt(n, x, y, z)				\
 	(_f4_volt					\
 		[					\
-		 (n) * (x_max * y_max * z_max) +	\
-		 (x) * (y_max * z_max) +		\
-		 (y) * (z_max) +			\
-		 (z)					\
+		 (x) * (y_max * z_max * n_max) +	\
+		 (y) * (z_max * n_max) +		\
+		 (z) * (n_max) +			\
+		 (n)					\
 		]					\
 	)
 
 #define f4_curr(n, x, y, z)				\
 	(_f4_curr					\
 		[					\
-		 (n) * (x_max * y_max * z_max) +  	\
-		 (x) * (y_max * z_max) +		\
-		 (y) * (z_max) +			\
-		 (z)					\
+		 (x) * (y_max * z_max * n_max) +  	\
+		 (y) * (z_max * n_max) +		\
+		 (z) * (n_max) +			\
+		 (n)					\
 		]					\
 	)
 
