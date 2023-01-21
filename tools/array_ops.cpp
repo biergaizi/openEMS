@@ -127,6 +127,21 @@ f4vector*** Create3DArray_v4sf(const unsigned int* numLines)
 	return array;
 }
 
+// Helper function to help calculating the offset of a
+// contiguous iliffe vector, as if malloc is used - because
+// the explicit formula is a brain-teaser.
+//
+// "*ptr" must be always pointed to the beginning of the
+// underlying iliffe vector block, already returned by
+// malloc().
+static size_t ialloc_offset = 0;
+static void *ialloc(void *ptr, size_t size)
+{
+	void *retval = (void *) (((char *) ptr) + ialloc_offset);
+	ialloc_offset += size;
+	return retval;
+}
+
 f4vector**** Create_N_3DArray_v4sf(const unsigned int* numLines)
 {
 	unsigned int n_max = 3;
@@ -146,12 +161,17 @@ f4vector**** Create_N_3DArray_v4sf(const unsigned int* numLines)
 
 	// create an iliffe vector to the N-3D array to allow
 	// array[n][x][y][z] access
+	void *iliffe_vector = malloc(sizeof(f4vector *) * (n_max +
+							   n_max * x_max +
+							   n_max * x_max * y_max));
+	ialloc_offset = 0;
+
 	f4vector**** array_ptr = NULL;
-	array_ptr = (f4vector****) malloc(sizeof(f4vector ***) * n_max);
+	array_ptr = (f4vector****) ialloc(iliffe_vector, sizeof(f4vector ***) * n_max);
 	for (unsigned int n = 0; n < n_max; n++) {
-		array_ptr[n] = (f4vector***) malloc(sizeof(f4vector **) * x_max);
+		array_ptr[n] = (f4vector***) ialloc(iliffe_vector, sizeof(f4vector **) * x_max);
 		for (unsigned int x = 0; x < x_max; x++) {
-			array_ptr[n][x] = (f4vector **) malloc(sizeof(f4vector *) * y_max);
+			array_ptr[n][x] = (f4vector **) ialloc(iliffe_vector, sizeof(f4vector *) * y_max);
 			for (unsigned int y = 0; y < y_max; y++) {
 				size_t offset = n * (x_max * y_max * z_max) +
 						x * (y_max * z_max) +
