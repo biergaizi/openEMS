@@ -118,9 +118,9 @@ void Engine_SSE_Compressed::UpdateVoltages(unsigned int startX, unsigned int num
 			);
 #else
 			temp.f[0] = 0;
-			temp.f[1] = f4_curr(0, pos[0], pos[1], numVectors-1].f[0];
-			temp.f[2] = f4_curr(0, pos[0], pos[1], numVectors-1].f[1];
-			temp.f[3] = f4_curr(0, pos[0], pos[1], numVectors-1].f[2];
+			temp.f[1] = f4_curr(0, pos[0], pos[1], numVectors-1).f[0];
+			temp.f[2] = f4_curr(0, pos[0], pos[1], numVectors-1).f[1];
+			temp.f[3] = f4_curr(0, pos[0], pos[1], numVectors-1).f[2];
 #endif
 			f4_volt(1, pos[0], pos[1], 0).v *=
 				Op->f4_vv_Compressed[1][index].v;
