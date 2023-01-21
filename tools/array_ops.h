@@ -61,9 +61,11 @@ inline __m128 & operator /= (__m128 & a, __m128 b){a = a / b; return a;}
 void Delete1DArray_v4sf(f4vector* array);
 void Delete3DArray_v4sf(f4vector*** array, const unsigned int* numLines);
 void Delete_N_3DArray_v4sf(f4vector**** array, const unsigned int* numLines);
+void Delete_N_3DArray_Flat_v4sf(f4vector* array, const unsigned int* numLines);
 f4vector* Create1DArray_v4sf(const unsigned int numLines);
 f4vector*** Create3DArray_v4sf(const unsigned int* numLines);
 f4vector**** Create_N_3DArray_v4sf(const unsigned int* numLines);
+f4vector* Create_N_3DArray_Flat_v4sf(const unsigned int* numLines);
 
 // *************************************************************************************
 // templates

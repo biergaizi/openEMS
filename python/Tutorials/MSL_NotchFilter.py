@@ -100,22 +100,23 @@ if 0:  # debugging only
 
 
 if not post_proc_only:
-    FDTD.Run(Sim_Path, cleanup=True)
+    FDTD.Run(Sim_Path, cleanup=True, numThreads=1)
 
 ### Post-processing and plotting
-f = linspace( 1e6, f_max, 1601 )
-for p in port:
-    p.CalcPort( Sim_Path, f, ref_impedance = 50)
-
-s11 = port[0].uf_ref / port[0].uf_inc
-s21 = port[1].uf_ref / port[0].uf_inc
-
-plot(f/1e9,20*log10(abs(s11)),'k-',linewidth=2 , label='$S_{11}$')
-grid()
-plot(f/1e9,20*log10(abs(s21)),'r--',linewidth=2 , label='$S_{21}$')
-legend()
-ylabel('S-Parameter (dB)')
-xlabel('frequency (GHz)')
-ylim([-40, 2])
-
-show()
+#f = linspace( 1e6, f_max, 1601 )
+#for p in port:
+#    p.CalcPort( Sim_Path, f, ref_impedance = 50)
+#
+#s11 = port[0].uf_ref / port[0].uf_inc
+#s21 = port[1].uf_ref / port[0].uf_inc
+#
+#plot(f/1e9,20*log10(abs(s11)),'k-',linewidth=2 , label='$S_{11}$')
+#grid()
+#plot(f/1e9,20*log10(abs(s21)),'r--',linewidth=2 , label='$S_{21}$')
+#legend()
+#ylabel('S-Parameter (dB)')
+#xlabel('frequency (GHz)')
+#ylim([-40, 2])
+#
+#show()
+exit(0)

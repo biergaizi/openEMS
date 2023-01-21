@@ -17,6 +17,29 @@
 
 #include "engine_interface_sse_fdtd.h"
 
+#define x_max m_Eng_SSE->Engine_sse::x_max
+#define y_max m_Eng_SSE->Engine_sse::y_max
+#define z_max m_Eng_SSE->Engine_sse::z_max
+#define f4_volt(n, x, y, z)			\
+	(m_Eng_SSE->Engine_sse::_f4_volt	\
+		[				\
+		 n * (x_max * y_max * z_max) +  \
+		 x * (y_max * z_max) +		\
+		 y * (z_max) +			\
+		 z				\
+		]				\
+	)
+
+#define f4_curr(n, x, y, z)			\
+	(m_Eng_SSE->Engine_sse::_f4_curr	\
+		[				\
+		 n * (x_max * y_max * z_max) +  \
+		 x * (y_max * z_max) +		\
+		 y * (z_max) +			\
+		 z				\
+		]				\
+	)
+
 Engine_Interface_SSE_FDTD::Engine_Interface_SSE_FDTD(Operator_sse* op) : Engine_Interface_FDTD(op)
 {
 	m_Op_SSE = op;
@@ -54,13 +77,13 @@ double Engine_Interface_SSE_FDTD::CalcFastEnergy() const
 		{
 			for (pos[2]=0; pos[2]<m_Op_SSE->numVectors; ++pos[2])
 			{
-				E_energy.v += m_Eng_SSE->Engine_sse::f4_volt[0][pos[0]][pos[1]][pos[2]].v * m_Eng_SSE->Engine_sse::f4_volt[0][pos[0]][pos[1]][pos[2]].v;
-				E_energy.v += m_Eng_SSE->Engine_sse::f4_volt[1][pos[0]][pos[1]][pos[2]].v * m_Eng_SSE->Engine_sse::f4_volt[1][pos[0]][pos[1]][pos[2]].v;
-				E_energy.v += m_Eng_SSE->Engine_sse::f4_volt[2][pos[0]][pos[1]][pos[2]].v * m_Eng_SSE->Engine_sse::f4_volt[2][pos[0]][pos[1]][pos[2]].v;
+				E_energy.v += f4_volt(0, pos[0], pos[1], pos[2]).v * f4_volt(0, pos[0], pos[1], pos[2]).v;
+				E_energy.v += f4_volt(1, pos[0], pos[1], pos[2]).v * f4_volt(1, pos[0], pos[1], pos[2]).v;
+				E_energy.v += f4_volt(2, pos[0], pos[1], pos[2]).v * f4_volt(2, pos[0], pos[1], pos[2]).v;
 
-				H_energy.v += m_Eng_SSE->Engine_sse::f4_curr[0][pos[0]][pos[1]][pos[2]].v * m_Eng_SSE->Engine_sse::f4_curr[0][pos[0]][pos[1]][pos[2]].v;
-				H_energy.v += m_Eng_SSE->Engine_sse::f4_curr[1][pos[0]][pos[1]][pos[2]].v * m_Eng_SSE->Engine_sse::f4_curr[1][pos[0]][pos[1]][pos[2]].v;
-				H_energy.v += m_Eng_SSE->Engine_sse::f4_curr[2][pos[0]][pos[1]][pos[2]].v * m_Eng_SSE->Engine_sse::f4_curr[2][pos[0]][pos[1]][pos[2]].v;
+				H_energy.v += f4_curr(0, pos[0], pos[1], pos[2]).v * f4_curr(0, pos[0], pos[1], pos[2]).v;
+				H_energy.v += f4_curr(1, pos[0], pos[1], pos[2]).v * f4_curr(1, pos[0], pos[1], pos[2]).v;
+				H_energy.v += f4_curr(2, pos[0], pos[1], pos[2]).v * f4_curr(2, pos[0], pos[1], pos[2]).v;
 			}
 		}
 	}

@@ -21,10 +21,10 @@ set(SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/engine_sse_compressed.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/operator_multithread.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/excitation.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/operator_cylindermultigrid.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/engine_cylindermultigrid.cpp
+  #${CMAKE_CURRENT_SOURCE_DIR}/operator_cylindermultigrid.cpp
+  #${CMAKE_CURRENT_SOURCE_DIR}/engine_cylindermultigrid.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/engine_interface_fdtd.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/engine_interface_sse_fdtd.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/engine_interface_cylindrical_fdtd.cpp
+  #${CMAKE_CURRENT_SOURCE_DIR}/engine_interface_cylindrical_fdtd.cpp
   PARENT_SCOPE
 )

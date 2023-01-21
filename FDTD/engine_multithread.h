@@ -82,7 +82,7 @@ protected:
 class Engine_Multithread : public ENGINE_MULTITHREAD_BASE
 {
 	friend class NS_Engine_Multithread::thread;
-	friend class Engine_CylinderMultiGrid;
+	//friend class Engine_CylinderMultiGrid;
 public:
 	static Engine_Multithread* New(const Operator_Multithread* op, unsigned int numThreads = 0);
 	virtual ~Engine_Multithread();

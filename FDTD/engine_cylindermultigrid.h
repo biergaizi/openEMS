@@ -20,6 +20,26 @@
 
 #include "engine_cylinder.h"
 
+#define f4_volt(n, x, y, z)			\
+	(_f4_volt				\
+		[				\
+		 n * (x_max * y_max * z_max) +  \
+		 x * (y_max * z_max) +		\
+		 y * (z_max) +			\
+		 z				\
+		]				\
+	)
+
+#define f4_curr(n, x, y, z)			\
+	(_f4_curr				\
+		[				\
+		 n * (x_max * y_max * z_max) +  \
+		 x * (y_max * z_max) +		\
+		 y * (z_max) +			\
+		 z				\
+		]				\
+	)
+
 class Operator_CylinderMultiGrid;
 class Engine_CylinderMultiGrid_Thread;
 class Engine_Ext_CylinderMultiGrid;

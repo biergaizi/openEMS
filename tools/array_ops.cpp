@@ -17,6 +17,7 @@
 
 #include "array_ops.h"
 #include <ostream>
+#include <string.h>
 
 using namespace std;
 
@@ -61,6 +62,13 @@ void Delete_N_3DArray_v4sf(f4vector**** array, const unsigned int* numLines)
 	{
 		Delete3DArray_v4sf(array[n],numLines);
 	}
+	FREE( array );
+	//delete[] array;
+}
+
+void Delete_N_3DArray_Flat_v4sf(f4vector* array, const unsigned int* numLines)
+{
+	if (array==NULL) return;
 	FREE( array );
 	//delete[] array;
 }
@@ -140,3 +148,19 @@ f4vector**** Create_N_3DArray_v4sf(const unsigned int* numLines)
 	return array;
 }
 
+f4vector* Create_N_3DArray_Flat_v4sf(const unsigned int* numLines)
+{
+	const size_t numN = 3;
+	size_t numX = numLines[0];
+	size_t numY = numLines[1];
+	size_t numZ = ceil((double)numLines[2]/4.0);
+
+	f4vector* array=NULL;
+	if (MEMALIGN( (void**)&array, 16, numN*numX*numY*numZ*sizeof(f4vector) ))
+	{
+		cerr << "cannot allocate aligned memory" << endl;
+		exit(3);
+	}
+	memset(array, 0, F4VECTOR_SIZE*numN*numX*numY*numZ);
+	return array;
+}

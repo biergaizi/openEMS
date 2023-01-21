@@ -91,6 +91,7 @@ bool Operator_Ext_UPML::Create_UPML(Operator* op, const int ui_BC[6], const unsi
 		}
 
 	//check cylindrical coord compatiblility
+#if 0
 	Operator_Cylinder* op_cyl = dynamic_cast<Operator_Cylinder*>(op);
 	if (op_cyl)
 	{
@@ -130,6 +131,7 @@ bool Operator_Ext_UPML::Create_UPML(Operator* op, const int ui_BC[6], const unsi
 			cerr << "Operator_Ext_UPML::Create_UPML: Warning: An upml in alpha direction is not possible for a cylindrical multi-grid, resetting to PEC..." << endl;
 		}
 	}
+#endif
 
 
 	Operator_Ext_UPML* op_ext_upml=NULL;
@@ -188,9 +190,11 @@ bool Operator_Ext_UPML::Create_UPML(Operator* op, const int ui_BC[6], const unsi
 	stop[1] =op->GetNumberOfLines(1,true)-1-(size[3]+1)*(BC[3]==3);
 
 	//exclude x-lines that does not belong to the base multi-grid operator;
+#if 0
 	Operator_CylinderMultiGrid* op_cyl_MG = dynamic_cast<Operator_CylinderMultiGrid*>(op);
 	if (op_cyl_MG)
 		start[0] = op_cyl_MG->GetSplitPos()-1;
+#endif
 
 	if (BC[4]==3)
 	{
@@ -216,6 +220,7 @@ bool Operator_Ext_UPML::Create_UPML(Operator* op, const int ui_BC[6], const unsi
 	BC[1]=0;
 	size[1]=0;
 	//create pml extensions (in z-direction only) for child operators in cylindrical multigrid operators
+#if 0
 	while (op_cyl_MG)
 	{
 		Operator_Cylinder* op_child = op_cyl_MG->GetInnerOperator();
@@ -250,6 +255,7 @@ bool Operator_Ext_UPML::Create_UPML(Operator* op, const int ui_BC[6], const unsi
 			op_child->AddExtension(op_ext_upml);
 		}
 	}
+#endif
 
 	return true;
 }

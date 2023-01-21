@@ -9,6 +9,8 @@ ENDIF()
 PROJECT(openEMS CXX C)
 cmake_minimum_required(VERSION 3.0)
 
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+
 # default
 set(LIB_VERSION_MAJOR 0)
 set(LIB_VERSION_MINOR 0)
@@ -162,7 +164,8 @@ endif()
 
 if(${ARCH} STREQUAL "x86_64")
   message(STATUS "Detected 64-bit x86 target")
-  #set(CMAKE_CXX_FLAGS "-msse -march=native")
+  #set(CMAKE_CXX_FLAGS "-msse -mavx -O0 -fsanitize=address -march=native -g -fno-omit-frame-pointer")
+  set(CMAKE_CXX_FLAGS "-msse -mavx -Ofast -march=native -g -fno-omit-frame-pointer")
 elseif(${ARCH} STREQUAL "ppc64")
   message(STATUS "Detected 64-bit POWER target")
   set(CMAKE_CXX_FLAGS "-DNO_WARN_X86_INTRINSICS -DSSE_CORRECT_DENORMALS")

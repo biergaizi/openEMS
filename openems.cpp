@@ -22,7 +22,7 @@
 #include "tools/array_ops.h"
 #include "tools/useful.h"
 #include "FDTD/operator_cylinder.h"
-#include "FDTD/operator_cylindermultigrid.h"
+//#include "FDTD/operator_cylindermultigrid.h"
 #include "FDTD/engine_multithread.h"
 #include "FDTD/operator_multithread.h"
 #include "FDTD/extensions/operator_ext_excitation.h"
@@ -328,6 +328,7 @@ bool openEMS::SetupBoundaryConditions()
 
 Engine_Interface_FDTD* openEMS::NewEngineInterface(int multigridlevel)
 {
+#if 0
 	Operator_CylinderMultiGrid* op_cyl_mg = dynamic_cast<Operator_CylinderMultiGrid*>(FDTD_Op);
 	while (op_cyl_mg && multigridlevel>0)
 	{
@@ -351,6 +352,7 @@ Engine_Interface_FDTD* openEMS::NewEngineInterface(int multigridlevel)
 	Operator_Cylinder* op_cyl = dynamic_cast<Operator_Cylinder*>(FDTD_Op);
 	if (op_cyl)
 		return new Engine_Interface_Cylindrical_FDTD(op_cyl);
+#endif
 	Operator_sse* op_sse = dynamic_cast<Operator_sse*>(FDTD_Op);
 	if (op_sse)
 		return new Engine_Interface_SSE_FDTD(op_sse);
@@ -600,14 +602,17 @@ bool openEMS::SetupMaterialStorages()
 
 void openEMS::SetupCylinderMultiGrid(std::string val)
 {
+#if 0
 	m_CC_MultiGrid.clear();
 	m_CC_MultiGrid = SplitString2Double(val,',');
+#endif
 }
 
 bool openEMS::SetupOperator()
 {
 	if (CylinderCoords)
 	{
+#if 0
 		if (m_CC_MultiGrid.size()>0)
 		{
 			FDTD_Op = Operator_CylinderMultiGrid::New(m_CC_MultiGrid, m_engine_numThreads);
@@ -616,6 +621,7 @@ bool openEMS::SetupOperator()
 		}
 		else
 			FDTD_Op = Operator_Cylinder::New(m_engine_numThreads);
+#endif
 	}
 	else if (m_engine == EngineType_SSE)
 	{
