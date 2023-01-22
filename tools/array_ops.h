@@ -62,21 +62,21 @@ struct _N_3DArray_v4sf
 {
 	inline f4vector& operator() (const unsigned int n, const unsigned int x, const unsigned int y, const unsigned int z) {
                 return array[
-                        x * (y_max * z_max * n_max) +
-                        y * (z_max * n_max) +
-                        z * (n_max) +
+                        x * x_stride +
+                        y * y_stride +
+                        z * (3) +
                         n
                 ];
         }
         inline f4vector operator() (const unsigned int &n, const unsigned int &x, const unsigned int &y, const unsigned int z) const {
                 return array[
-                        x * (y_max * z_max * n_max) +
-                        y * (z_max * n_max) +
-                        z * (n_max) +
+                        x * x_stride +
+                        y * y_stride +
+                        z * (3) +
                         n
                 ];
         }
-	unsigned int n_max, x_max, y_max, z_max;
+	unsigned long x_stride, y_stride;
 
 	// This is a flexible array member, the actual size would be
 	// determined by the actual size used to call malloc (actually

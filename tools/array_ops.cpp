@@ -152,10 +152,12 @@ N_3DArray_v4sf *Create_N_3DArray_Flat_v4sf(const unsigned int* numLines)
 	}
 	memset(n_3d_array_v4sf, 0, size);
 
-	n_3d_array_v4sf->n_max = n_max;
-	n_3d_array_v4sf->x_max = x_max;
-	n_3d_array_v4sf->y_max = y_max;
-	n_3d_array_v4sf->z_max = z_max;
+	//n_3d_array_v4sf->n_max = n_max;
+	//n_3d_array_v4sf->x_max = x_max;
+	//n_3d_array_v4sf->y_max = y_max;
+	//n_3d_array_v4sf->z_max = z_max;
+	n_3d_array_v4sf->x_stride = y_max * z_max * n_max;
+	n_3d_array_v4sf->y_stride = z_max * n_max;
 
 	return n_3d_array_v4sf;
 }
