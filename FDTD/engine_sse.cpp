@@ -66,9 +66,6 @@ void Engine_sse::Init()
 	f4_curr_ptr = Create_N_3DArray_Flat_v4sf(numLines);
 }
 
-#define f4_volt (*f4_volt_ptr)
-#define f4_curr (*f4_curr_ptr)
-
 void Engine_sse::Reset()
 {
 	Engine::Reset();
@@ -78,16 +75,18 @@ void Engine_sse::Reset()
 	//_f4_curr = 0;
 }
 
-#define Op_f4_vv (*(Op->f4_vv_ptr))
-#define Op_f4_vi (*(Op->f4_vi_ptr))
-#define Op_f4_iv (*(Op->f4_iv_ptr))
-#define Op_f4_ii (*(Op->f4_ii_ptr))
 
 void Engine_sse::UpdateVoltages(unsigned int startX, unsigned int numX)
 {
 	unsigned int pos[3];
 	bool shift[2];
 	f4vector temp;
+	N_3DArray_v4sf &f4_volt = *f4_volt_ptr;
+	N_3DArray_v4sf &f4_curr = *f4_curr_ptr;
+	N_3DArray_v4sf &Op_f4_vv = *(Op->f4_vv_ptr);
+	N_3DArray_v4sf &Op_f4_vi = *(Op->f4_vi_ptr);
+	N_3DArray_v4sf &Op_f4_iv = *(Op->f4_iv_ptr);
+	N_3DArray_v4sf &Op_f4_ii = *(Op->f4_ii_ptr);
 
 	pos[0] = startX;
 	for (unsigned int posX=0; posX<numX; ++posX)
@@ -182,6 +181,12 @@ void Engine_sse::UpdateCurrents(unsigned int startX, unsigned int numX)
 {
 	unsigned int pos[5];
 	f4vector temp;
+	N_3DArray_v4sf &f4_volt = *f4_volt_ptr;
+	N_3DArray_v4sf &f4_curr = *f4_curr_ptr;
+	N_3DArray_v4sf &Op_f4_vv = *(Op->f4_vv_ptr);
+	N_3DArray_v4sf &Op_f4_vi = *(Op->f4_vi_ptr);
+	N_3DArray_v4sf &Op_f4_iv = *(Op->f4_iv_ptr);
+	N_3DArray_v4sf &Op_f4_ii = *(Op->f4_ii_ptr);
 
 	pos[0] = startX;
 	for (unsigned int posX=0; posX<numX; ++posX)
