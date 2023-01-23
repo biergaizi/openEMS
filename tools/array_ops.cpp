@@ -161,3 +161,24 @@ N_3DArray_v4sf *Create_N_3DArray_Flat_v4sf(const unsigned int* numLines)
 
 	return n_3d_array_v4sf;
 }
+
+Array2D_float* Create2DArray_f(const unsigned int* numLines)
+{
+	Array2D_float *array2d_float;
+	unsigned int max_x = numLines[0];
+	unsigned int max_y = numLines[1];
+
+	size_t size = sizeof(Array2D_float);
+	size += sizeof(float) * max_x * max_y;
+	size -= sizeof(float);
+
+	array2d_float = (Array2D_float *) malloc(size);
+	memset(array2d_float, 0, size);
+	array2d_float->x_stride = max_y;
+
+	return array2d_float;
+}
+
+void Delete2DArray_f(Array2D_float *array, const unsigned int* numLines)
+{
+}

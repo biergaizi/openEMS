@@ -18,8 +18,6 @@
 #include "operator_ext_mur_abc.h"
 #include "engine_ext_mur_abc.h"
 
-#include "tools/array_ops.h"
-
 #include "CSPropMaterial.h"
 
 Operator_Ext_Mur_ABC::Operator_Ext_Mur_ABC(Operator* op) : Operator_Extension(op)
@@ -29,10 +27,10 @@ Operator_Ext_Mur_ABC::Operator_Ext_Mur_ABC(Operator* op) : Operator_Extension(op
 
 Operator_Ext_Mur_ABC::~Operator_Ext_Mur_ABC()
 {
-	Delete2DArray(m_Mur_Coeff_nyP,m_numLines);
-	m_Mur_Coeff_nyP = NULL;
-	Delete2DArray(m_Mur_Coeff_nyPP,m_numLines);
-	m_Mur_Coeff_nyPP = NULL;
+	Delete2DArray_f(m_Mur_Coeff_nyP_ptr,m_numLines);
+	m_Mur_Coeff_nyP_ptr = NULL;
+	Delete2DArray_f(m_Mur_Coeff_nyPP_ptr,m_numLines);
+	m_Mur_Coeff_nyPP_ptr = NULL;
 }
 
 Operator_Ext_Mur_ABC::Operator_Ext_Mur_ABC(Operator* op, Operator_Ext_Mur_ABC* op_ext) : Operator_Extension(op, op_ext)
@@ -78,8 +76,8 @@ void Operator_Ext_Mur_ABC::Initialize()
 
 	m_v_phase = 0.0;
 
-	m_Mur_Coeff_nyP = NULL;
-	m_Mur_Coeff_nyPP = NULL;
+	m_Mur_Coeff_nyP_ptr = NULL;
+	m_Mur_Coeff_nyPP_ptr = NULL;
 
 	m_numLines[0]=0;
 	m_numLines[1]=0;
@@ -90,8 +88,8 @@ void Operator_Ext_Mur_ABC::SetDirection(int ny, bool top_ny)
 	if ((ny<0) || (ny>2))
 		return;
 
-	Delete2DArray(m_Mur_Coeff_nyP,m_numLines);
-	Delete2DArray(m_Mur_Coeff_nyPP,m_numLines);
+	Delete2DArray_f(m_Mur_Coeff_nyP_ptr,m_numLines);
+	Delete2DArray_f(m_Mur_Coeff_nyPP_ptr,m_numLines);
 
 	m_ny = ny;
 	m_top = top_ny;
@@ -111,8 +109,8 @@ void Operator_Ext_Mur_ABC::SetDirection(int ny, bool top_ny)
 	m_numLines[0] = m_Op->GetNumberOfLines(m_nyP,true);
 	m_numLines[1] = m_Op->GetNumberOfLines(m_nyPP,true);
 
-	m_Mur_Coeff_nyP = Create2DArray<FDTD_FLOAT>(m_numLines);
-	m_Mur_Coeff_nyPP = Create2DArray<FDTD_FLOAT>(m_numLines);
+	m_Mur_Coeff_nyP_ptr = Create2DArray_f(m_numLines);
+	m_Mur_Coeff_nyPP_ptr = Create2DArray_f(m_numLines);
 
 }
 
@@ -144,6 +142,9 @@ bool Operator_Ext_Mur_ABC::BuildExtension()
 	posBB[m_ny]  =pos[m_ny];
 	posBB[m_nyPP]=-1;
 
+	Array2D_float &m_Mur_Coeff_nyP = *m_Mur_Coeff_nyP_ptr;
+	Array2D_float &m_Mur_Coeff_nyPP = *m_Mur_Coeff_nyPP_ptr;
+
 	for (pos[m_nyP]=0; pos[m_nyP]<m_numLines[0]; ++pos[m_nyP])
 	{
 		posBB[m_nyP]=pos[m_nyP];
@@ -165,7 +166,7 @@ bool Operator_Ext_Mur_ABC::BuildExtension()
 					c0t = m_v_phase * dT;
 				else
 					c0t = __C0__ * dT / sqrt(eps*mue);
-				m_Mur_Coeff_nyP[pos[m_nyP]][pos[m_nyPP]] = (c0t - delta) / (c0t + delta);
+				m_Mur_Coeff_nyP(pos[m_nyP], pos[m_nyPP]) = (c0t - delta) / (c0t + delta);
 
 				//nPP
 				eps = mat->GetEpsilonWeighted(m_nyPP,coord);
@@ -174,7 +175,7 @@ bool Operator_Ext_Mur_ABC::BuildExtension()
 					c0t = m_v_phase * dT;
 				else
 					c0t = __C0__ * dT / sqrt(eps*mue);
-				m_Mur_Coeff_nyPP[pos[m_nyP]][pos[m_nyPP]] = (c0t - delta) / (c0t + delta);
+				m_Mur_Coeff_nyPP(pos[m_nyP], pos[m_nyPP]) = (c0t - delta) / (c0t + delta);
 
 			}
 			else
@@ -183,10 +184,10 @@ bool Operator_Ext_Mur_ABC::BuildExtension()
 					c0t = m_v_phase * dT;
 				else
 					c0t = __C0__ / sqrt(m_Op->GetBackgroundEpsR()*m_Op->GetBackgroundMueR()) * dT;
-				m_Mur_Coeff_nyP[pos[m_nyP]][pos[m_nyPP]] = (c0t - delta) / (c0t + delta);
-				m_Mur_Coeff_nyPP[pos[m_nyP]][pos[m_nyPP]] = m_Mur_Coeff_nyP[pos[m_nyP]][pos[m_nyPP]];
+				m_Mur_Coeff_nyP(pos[m_nyP], pos[m_nyPP]) = (c0t - delta) / (c0t + delta);
+				m_Mur_Coeff_nyPP(pos[m_nyP], pos[m_nyPP]) = m_Mur_Coeff_nyP(pos[m_nyP], pos[m_nyPP]);
 			}
-//			cerr << m_Mur_Coeff_nyP[pos[m_nyP]][pos[m_nyPP]] << " : " << m_Mur_Coeff_nyP[pos[m_nyP]][pos[m_nyPP]] << endl;
+//			cerr << m_Mur_Coeff_nyP(pos[m_nyP], pos[m_nyPP]) << " : " << m_Mur_Coeff_nyP(pos[m_nyP], pos[m_nyPP]) << endl;
 		}
 	}
 //	cerr << "Operator_Ext_Mur_ABC::BuildExtension(): " << m_ny << " @ " << m_LineNr << endl;

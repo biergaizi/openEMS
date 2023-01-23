@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <string>
+#include <cstring>
 #include <math.h>
 #include "constants.h"
 
@@ -57,6 +58,20 @@ inline __m128 & operator -= (__m128 & a, __m128 b){a = a - b; return a;}
 inline __m128 & operator *= (__m128 & a, __m128 b){a = a * b; return a;}
 inline __m128 & operator /= (__m128 & a, __m128 b){a = a / b; return a;}
 #endif
+
+struct _Array2D_float
+{
+	inline float& operator() (const unsigned int x, const unsigned int y) {
+		return array[x * x_stride + y];
+	}
+	inline float operator() (const unsigned int &x, const unsigned int &y) const {
+		return array[x * x_stride + y];
+	}
+
+	unsigned long x_stride;
+	float array[1];
+};
+typedef struct _Array2D_float Array2D_float;
 
 struct _N_3DArray_v4sf
 {
@@ -91,9 +106,11 @@ struct _N_3DArray_v4sf
 typedef struct _N_3DArray_v4sf N_3DArray_v4sf;
 
 void Delete1DArray_v4sf(f4vector* array);
+void Delete2DArray_f(Array2D_float *array, const unsigned int* numLines);
 void Delete3DArray_v4sf(f4vector*** array, const unsigned int* numLines);
 void Delete_N_3DArray_v4sf(f4vector**** array, const unsigned int* numLines);
 f4vector* Create1DArray_v4sf(const unsigned int numLines);
+Array2D_float* Create2DArray_f(const unsigned int* numLines);
 f4vector*** Create3DArray_v4sf(const unsigned int* numLines);
 N_3DArray_v4sf *Create_N_3DArray_Flat_v4sf(const unsigned int* numLines);
 

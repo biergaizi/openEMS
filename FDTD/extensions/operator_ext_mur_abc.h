@@ -20,6 +20,7 @@
 
 #include "FDTD/operator.h"
 #include "operator_extension.h"
+#include "tools/array_ops.h"
 
 class Operator_Ext_Mur_ABC : public Operator_Extension
 {
@@ -61,8 +62,8 @@ protected:
 
 	unsigned int m_numLines[2];
 
-	FDTD_FLOAT** m_Mur_Coeff_nyP;
-	FDTD_FLOAT** m_Mur_Coeff_nyPP;
+	Array2D_float* m_Mur_Coeff_nyP_ptr;
+	Array2D_float* m_Mur_Coeff_nyPP_ptr;
 };
 
 #endif // OPERATOR_EXT_MUR_ABC_H
