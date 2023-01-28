@@ -31,7 +31,7 @@
 #include <math.h>
 #include "constants.h"
 
-#define F4VECTOR_SIZE 16 // sizeof(typeid(f4vector))
+#define F4VECTOR_SIZE 32 // sizeof(typeid(f4vector))
 
 #ifdef WIN32
 #include <malloc.h>
@@ -47,14 +47,16 @@ typedef float v4sf __attribute__ ((vector_size (F4VECTOR_SIZE))); // vector of f
 union f4vector
 {
 	v4sf v;
-	float f[4];
+	float f[8];
 };
-#else // MSVC
+#endif
+
+#if 0
 #include <emmintrin.h>
 union f4vector
 {
 	__m128 v;
-	float f[4];
+	float f[8];
 };
 inline __m128 operator + (__m128 a, __m128 b) {return _mm_add_ps(a, b);}
 inline __m128 operator - (__m128 a, __m128 b) {return _mm_sub_ps(a, b);}

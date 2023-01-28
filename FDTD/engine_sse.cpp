@@ -37,7 +37,7 @@ Engine_sse::Engine_sse(const Operator_sse* op) : Engine(op)
 	Op = op;
 	f4_volt_ptr = 0;
 	f4_curr_ptr = 0;
-	numVectors =  ceil((double)numLines[2]/4.0);
+	numVectors =  ceil((double)numLines[2]/8.0);
 
 	// speed up the calculation of denormal floating point values (flush-to-zero)
 #ifndef SSE_CORRECT_DENORMALS

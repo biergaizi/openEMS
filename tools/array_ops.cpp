@@ -70,6 +70,10 @@ f4vector* Create1DArray_v4sf(const unsigned int numLines)
 		array[pos].f[1] = 0;
 		array[pos].f[2] = 0;
 		array[pos].f[3] = 0;
+		array[pos].f[4] = 0;
+		array[pos].f[5] = 0;
+		array[pos].f[6] = 0;
+		array[pos].f[7] = 0;
 	}
 	return array;
 }
@@ -130,4 +134,3 @@ f4vector**** Create_N_3DArray_v4sf(const unsigned int* numLines)
 	}
 	return array;
 }
-

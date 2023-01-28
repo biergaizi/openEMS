@@ -62,6 +62,7 @@ void Engine_SSE_Compressed::UpdateVoltages(unsigned int start[3], unsigned int s
 			for (pos[2] = 1; pos[2] < numVectors; ++pos[2])
 			{
 				index = Op->m_Op_index[pos[0]][pos[1]][pos[2]];
+
 				// x-polarization
 				f4_volt(0, pos[0], pos[1], pos[2]).v *=
 				    Op->f4_vv_Compressed[0][index].v;
@@ -99,16 +100,15 @@ void Engine_SSE_Compressed::UpdateVoltages(unsigned int start[3], unsigned int s
 			// for pos[2] = 0
 			// x-polarization
 			index = Op->m_Op_index[pos[0]][pos[1]][0];
-#ifdef __SSE2__
-			temp.v = (__m128)_mm_slli_si128(
-			             (__m128i)f4_curr(1, pos[0], pos[1], numVectors-1).v, 4
-			         );
-#else
 			temp.f[0] = 0;
 			temp.f[1] = f4_curr(1, pos[0], pos[1], numVectors-1).f[0];
 			temp.f[2] = f4_curr(1, pos[0], pos[1], numVectors-1).f[1];
 			temp.f[3] = f4_curr(1, pos[0], pos[1], numVectors-1).f[2];
-#endif
+			temp.f[4] = f4_curr(1, pos[0], pos[1], numVectors-1).f[3];
+			temp.f[5] = f4_curr(1, pos[0], pos[1], numVectors-1).f[4];
+			temp.f[6] = f4_curr(1, pos[0], pos[1], numVectors-1).f[5];
+			temp.f[7] = f4_curr(1, pos[0], pos[1], numVectors-1).f[6];
+
 			f4_volt(0, pos[0], pos[1], 0).v *=
 			    Op->f4_vv_Compressed[0][index].v;
 			f4_volt(0, pos[0], pos[1], 0).v +=
@@ -120,16 +120,15 @@ void Engine_SSE_Compressed::UpdateVoltages(unsigned int start[3], unsigned int s
 			    );
 
 			// y-polarization
-#ifdef __SSE2__
-			temp.v = (__m128)_mm_slli_si128(
-			             (__m128i)f4_curr(0, pos[0], pos[1], numVectors-1).v, 4
-			         );
-#else
 			temp.f[0] = 0;
 			temp.f[1] = f4_curr(0, pos[0], pos[1], numVectors-1).f[0];
 			temp.f[2] = f4_curr(0, pos[0], pos[1], numVectors-1).f[1];
 			temp.f[3] = f4_curr(0, pos[0], pos[1], numVectors-1).f[2];
-#endif
+			temp.f[4] = f4_curr(0, pos[0], pos[1], numVectors-1).f[3];
+			temp.f[5] = f4_curr(0, pos[0], pos[1], numVectors-1).f[4];
+			temp.f[6] = f4_curr(0, pos[0], pos[1], numVectors-1).f[5];
+			temp.f[7] = f4_curr(0, pos[0], pos[1], numVectors-1).f[6];
+
 			f4_volt(1, pos[0], pos[1], 0).v *=
 			    Op->f4_vv_Compressed[1][index].v;
 			f4_volt(1, pos[0], pos[1], 0).v +=
@@ -213,16 +212,15 @@ void Engine_SSE_Compressed::UpdateCurrents(unsigned int start[3], unsigned int s
 			index = Op->m_Op_index[pos[0]][pos[1]][numVectors-1];
 			// for pos[2] = numVectors-1
 			// x-pol
-#ifdef __SSE2__
-			temp.v = (__m128)_mm_srli_si128(
-			             (__m128i)f4_volt(1, pos[0], pos[1], 0).v, 4
-			         );
-#else
 			temp.f[0] = f4_volt(1, pos[0], pos[1], 0).f[1];
 			temp.f[1] = f4_volt(1, pos[0], pos[1], 0).f[2];
 			temp.f[2] = f4_volt(1, pos[0], pos[1], 0).f[3];
-			temp.f[3] = 0;
-#endif
+			temp.f[3] = f4_volt(1, pos[0], pos[1], 0).f[4];
+			temp.f[4] = f4_volt(1, pos[0], pos[1], 0).f[5];
+			temp.f[5] = f4_volt(1, pos[0], pos[1], 0).f[6];
+			temp.f[6] = f4_volt(1, pos[0], pos[1], 0).f[7];
+			temp.f[7] = 0;
+
 			f4_curr(0, pos[0], pos[1], numVectors-1).v *=
 			    Op->f4_ii_Compressed[0][index].v;
 			f4_curr(0, pos[0], pos[1], numVectors-1).v +=
@@ -234,16 +232,15 @@ void Engine_SSE_Compressed::UpdateCurrents(unsigned int start[3], unsigned int s
 			    );
 
 			// y-pol
-#ifdef __SSE2__
-			temp.v = (__m128)_mm_srli_si128(
-			             (__m128i)f4_volt(0, pos[0], pos[1], 0).v, 4
-			         );
-#else
 			temp.f[0] = f4_volt(0, pos[0], pos[1], 0).f[1];
 			temp.f[1] = f4_volt(0, pos[0], pos[1], 0).f[2];
 			temp.f[2] = f4_volt(0, pos[0], pos[1], 0).f[3];
-			temp.f[3] = 0;
-#endif
+			temp.f[3] = f4_volt(0, pos[0], pos[1], 0).f[4];
+			temp.f[4] = f4_volt(0, pos[0], pos[1], 0).f[5];
+			temp.f[5] = f4_volt(0, pos[0], pos[1], 0).f[6];
+			temp.f[6] = f4_volt(0, pos[0], pos[1], 0).f[7];
+			temp.f[7] = 0;
+
 			f4_curr(1, pos[0], pos[1], numVectors-1).v *=
 			    Op->f4_ii_Compressed[1][index].v;
 			f4_curr(1, pos[0], pos[1], numVectors-1).v +=

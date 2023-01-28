@@ -124,7 +124,7 @@ public:
 
 		// Allocators should throw std::bad_alloc in the case of memory allocation failure.
 		void * pv;
-		if (MEMALIGN( &pv, 16, n * sizeof(T)))
+		if (MEMALIGN( &pv, 32, n * sizeof(T)))
 			throw std::bad_alloc();
 
 		return static_cast<T *>(pv);

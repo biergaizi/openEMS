@@ -104,6 +104,11 @@ void Engine_Ext_CylinderMultiGrid::SyncVoltages()
 	v_null.f[1] = 0;
 	v_null.f[2] = 0;
 	v_null.f[3] = 0;
+	v_null.f[4] = 0;
+	v_null.f[5] = 0;
+	v_null.f[6] = 0;
+	v_null.f[7] = 0;
+
 	for (pos[1]=0; pos[1]<numLines[1]-1; pos[1]+=2)
 	{
 		pos1_half = pos[1]/2;

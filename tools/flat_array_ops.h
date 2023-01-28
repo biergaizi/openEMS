@@ -105,7 +105,7 @@ inline Flat_N_3DArray<f4vector>* Create_Flat_N_3DArray<f4vector>(const unsigned 
 	unsigned int n_max = 3;
 	unsigned int x_max = numLines[0];
 	unsigned int y_max = numLines[1];
-	unsigned int z_max = ceil((double) numLines[2] / 4.0);
+	unsigned int z_max = ceil((double) numLines[2] / 8.0);
 
 	// If the definition of Flat_N_3DArray<f4vector> has been changed,
 	// the underlying array must start at an address that is a multiple

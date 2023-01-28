@@ -364,7 +364,7 @@ void Operator_CylinderMultiGrid::SetupInterpolation()
 		if ((a_n==0) && CC_closedAlpha)
 			dl_pp -= 2*PI;
 
-		for (int v=0;v<4;++v)
+		for (int v=0;v<8;++v)
 		{
 			if (m_interpol_pos_i_2p[0][a_n]==m_interpol_pos_i_2pp[0][a_n])
 				f4_interpol_i_2p[0][a_n].f[v] = 1.0;
@@ -391,7 +391,7 @@ void Operator_CylinderMultiGrid::SetupInterpolation()
 		dl_p=m_InnerOp->GetDiscLine(1,m_interpol_pos_v_2p[0][a_n],false);
 		dl_pp=m_InnerOp->GetDiscLine(1,m_interpol_pos_v_2pp[0][a_n],false);
 
-		for (int v=0;v<4;++v)
+		for (int v=0;v<8;++v)
 		{
 			if (m_interpol_pos_v_2p[0][a_n]==m_interpol_pos_v_2pp[0][a_n])
 				f4_interpol_v_2p[0][a_n].f[v] = 1.0;
@@ -421,7 +421,7 @@ void Operator_CylinderMultiGrid::SetupInterpolation()
 		if ((a_n==numLines[1]-2) && !CC_closedAlpha)
 			m_interpol_pos_i_2pp[1][a_n] = a_n/2 - 1;
 
-		for (int v=0;v<4;++v)
+		for (int v=0;v<8;++v)
 		{
 			if (m_interpol_pos_i_2p[1][a_n]==m_interpol_pos_i_2pp[1][a_n])
 				f4_interpol_i_2p[1][a_n].f[v] = GetDiscDelta(1,a_n,true)/m_InnerOp->GetDiscDelta(1,m_interpol_pos_i_2p[1][a_n],true);
@@ -467,7 +467,7 @@ void Operator_CylinderMultiGrid::SetupInterpolation()
 		dl_p=m_InnerOp->GetDiscLine(1,m_interpol_pos_v_2p[1][a_n],true);
 		dl_pp=m_InnerOp->GetDiscLine(1,m_interpol_pos_v_2pp[1][a_n],true);
 
-		for (int v=0;v<4;++v)
+		for (int v=0;v<8;++v)
 		{
 			if (m_interpol_pos_v_2p[1][a_n]==m_interpol_pos_v_2pp[1][a_n])
 				f4_interpol_v_2p[1][a_n].f[v] = f4_interpol_v_2pp[1][a_n].f[v] = 0;

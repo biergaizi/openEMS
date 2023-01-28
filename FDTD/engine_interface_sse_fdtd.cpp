@@ -44,6 +44,10 @@ double Engine_Interface_SSE_FDTD::CalcFastEnergy() const
 	E_energy.f[1]=0;
 	E_energy.f[2]=0;
 	E_energy.f[3]=0;
+	E_energy.f[4]=0;
+	E_energy.f[5]=0;
+	E_energy.f[6]=0;
+	E_energy.f[7]=0;
 	f4vector H_energy;
 	H_energy = E_energy;
 
@@ -68,5 +72,12 @@ double Engine_Interface_SSE_FDTD::CalcFastEnergy() const
 		}
 	}
 
-	return __EPS0__*(E_energy.f[0]+E_energy.f[1]+E_energy.f[2]+E_energy.f[3]) + __MUE0__*(H_energy.f[0]+H_energy.f[1]+H_energy.f[2]+H_energy.f[3]);
+	return __EPS0__*(
+			E_energy.f[0] + E_energy.f[1] + E_energy.f[2] + E_energy.f[3] +
+			E_energy.f[4] + E_energy.f[5] + E_energy.f[6] + E_energy.f[7]
+		) +
+		__MUE0__*(
+			H_energy.f[0] + H_energy.f[1] + H_energy.f[2] + H_energy.f[3] +
+			H_energy.f[4] + H_energy.f[5] + H_energy.f[6] + H_energy.f[7]
+		);
 }
