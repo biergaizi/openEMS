@@ -87,5 +87,5 @@ void Operator_sse::InitOperator()
 	f4_iv_ptr = Create_N_3DArray_Flat_v4sf(numLines);
 	f4_ii_ptr = Create_N_3DArray_Flat_v4sf(numLines);
 
-	numVectors =  ceil((double)numLines[2]/4.0);
+	numVectors =  ceil((double)numLines[2]/8.0);
 }

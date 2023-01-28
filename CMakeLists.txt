@@ -162,7 +162,7 @@ endif()
 
 if(${ARCH} STREQUAL "x86_64")
   message(STATUS "Detected 64-bit x86 target")
-  #set(CMAKE_CXX_FLAGS "-msse -march=native")
+  set(CMAKE_CXX_FLAGS "-msse -mavx -O3")
 elseif(${ARCH} STREQUAL "ppc64")
   message(STATUS "Detected 64-bit POWER target")
   set(CMAKE_CXX_FLAGS "-DNO_WARN_X86_INTRINSICS -DSSE_CORRECT_DENORMALS")

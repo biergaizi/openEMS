@@ -131,7 +131,7 @@ N_3DArray_v4sf *Create_N_3DArray_Flat_v4sf(const unsigned int* numLines)
 	unsigned int n_max = 3;
 	unsigned int x_max = numLines[0];
 	unsigned int y_max = numLines[1];
-	unsigned int z_max = ceil((double)numLines[2] / 4.0);
+	unsigned int z_max = ceil((double)numLines[2] / 8.0);
 
 	// Size of the header itself.
 	// If the definition of N_3DArray_v4sf has been changed,
@@ -145,7 +145,7 @@ N_3DArray_v4sf *Create_N_3DArray_Flat_v4sf(const unsigned int* numLines)
 	// array[0] is counted twice, so remove one element.
 	size -= F4VECTOR_SIZE;
 
-	if (MEMALIGN( (void**)&n_3d_array_v4sf, 16, size))
+	if (MEMALIGN( (void**)&n_3d_array_v4sf, 64, size))
 	{
 		cerr << "cannot allocate aligned memory" << endl;
 		exit(3);
