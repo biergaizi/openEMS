@@ -20,6 +20,7 @@
 
 #include "FDTD/operator.h"
 #include "operator_extension.h"
+#include "tools/array_ops.h"
 
 class FunctionParser;
 
@@ -88,19 +89,19 @@ protected:
 
 	void DeleteOp();
 
-	virtual FDTD_FLOAT& GetVV(int ny, unsigned int pos[3]) {return vv[ny][pos[0]][pos[1]][pos[2]];}
-	virtual FDTD_FLOAT& GetVVFO(int ny, unsigned int pos[3]) {return vvfo[ny][pos[0]][pos[1]][pos[2]];}
-	virtual FDTD_FLOAT& GetVVFN(int ny, unsigned int pos[3]) {return vvfn[ny][pos[0]][pos[1]][pos[2]];}
-	virtual FDTD_FLOAT& GetII(int ny, unsigned int pos[3]) {return ii[ny][pos[0]][pos[1]][pos[2]];}
-	virtual FDTD_FLOAT& GetIIFO(int ny, unsigned int pos[3]) {return iifo[ny][pos[0]][pos[1]][pos[2]];}
-	virtual FDTD_FLOAT& GetIIFN(int ny, unsigned int pos[3]) {return iifn[ny][pos[0]][pos[1]][pos[2]];}
+	virtual FDTD_FLOAT& GetVV(int ny, unsigned int pos[3]) {return (*vv_ptr)(ny, pos[0], pos[1], pos[2]);}
+	virtual FDTD_FLOAT& GetVVFO(int ny, unsigned int pos[3]) {return (*vvfo_ptr)(ny, pos[0], pos[1], pos[2]);}
+	virtual FDTD_FLOAT& GetVVFN(int ny, unsigned int pos[3]) {return (*vvfn_ptr)(ny, pos[0], pos[1], pos[2]);}
+	virtual FDTD_FLOAT& GetII(int ny, unsigned int pos[3]) {return (*ii_ptr)(ny, pos[0], pos[1], pos[2]);}
+	virtual FDTD_FLOAT& GetIIFO(int ny, unsigned int pos[3]) {return (*iifo_ptr)(ny, pos[0], pos[1], pos[2]);}
+	virtual FDTD_FLOAT& GetIIFN(int ny, unsigned int pos[3]) {return (*iifn_ptr)(ny, pos[0], pos[1], pos[2]);}
 
-	FDTD_FLOAT**** vv;   //calc new voltage from old voltage
-	FDTD_FLOAT**** vvfo; //calc new voltage from old voltage flux
-	FDTD_FLOAT**** vvfn; //calc new voltage from new voltage flux
-	FDTD_FLOAT**** ii;   //calc new current from old current
-	FDTD_FLOAT**** iifo; //calc new current from old current flux
-	FDTD_FLOAT**** iifn; //calc new current from new current flux
+	N_3DArray* vv_ptr;   //calc new voltage from old voltage
+	N_3DArray* vvfo_ptr; //calc new voltage from old voltage flux
+	N_3DArray* vvfn_ptr; //calc new voltage from new voltage flux
+	N_3DArray* ii_ptr;   //calc new current from old current
+	N_3DArray* iifo_ptr; //calc new current from old current flux
+	N_3DArray* iifn_ptr; //calc new current from new current flux
 };
 
 #endif // OPERATOR_EXT_UPML_H

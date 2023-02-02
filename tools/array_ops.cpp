@@ -161,3 +161,32 @@ N_3DArray_v4sf *Create_N_3DArray_Flat_v4sf(const unsigned int* numLines)
 
 	return n_3d_array_v4sf;
 }
+
+N_3DArray* Create_N_3DArray_Flat(const unsigned int* numLines)
+{
+	N_3DArray *n_3d_array;
+	unsigned int n_max = 3;
+	unsigned int x_max = numLines[0];
+	unsigned int y_max = numLines[1];
+	unsigned int z_max = numLines[2];
+
+	size_t size = sizeof(N_3DArray);
+
+	// and the actual memory of the array[1] flexible array member
+	size += sizeof(float) * n_max * x_max * y_max * z_max;
+
+	// array[0] is counted twice, so remove one element.
+	size -= sizeof(float);
+
+	if (MEMALIGN( (void**)&n_3d_array, 16, size))
+	{
+		cerr << "cannot allocate aligned memory" << endl;
+		exit(3);
+	}
+	memset(n_3d_array, 0, size);
+
+	n_3d_array->x_stride = y_max * z_max * n_max;
+	n_3d_array->y_stride = z_max * n_max;
+
+	return n_3d_array;
+}

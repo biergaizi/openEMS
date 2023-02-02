@@ -242,6 +242,8 @@ void Engine_Ext_Mur_ABC::Apply2Voltages(int threadID)
 				{
 					eng_sse->Engine_sse::SetVolt(m_nyP,pos, m_volt_nyP[pos[m_nyP]][pos[m_nyPP]]);
 					eng_sse->Engine_sse::SetVolt(m_nyPP,pos, m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]]);
+					printf("apply (%d,%d,%d,%d)\n", m_nyP,  pos[0], pos[1], pos[2]);
+					printf("apply (%d,%d,%d,%d)\n", m_nyPP, pos[0], pos[1], pos[2]);
 				}
 			}
 			break;

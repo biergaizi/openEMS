@@ -90,11 +90,44 @@ struct _N_3DArray_v4sf
 };
 typedef struct _N_3DArray_v4sf N_3DArray_v4sf;
 
+struct _N_3DArray
+{
+	inline float& operator() (const unsigned int n, const unsigned int x, const unsigned int y, const unsigned int z) {
+                return array[
+                        x * x_stride +
+                        y * y_stride +
+                        z * (3) +
+                        n
+                ];
+        }
+        inline float operator() (const unsigned int &n, const unsigned int &x, const unsigned int &y, const unsigned int z) const {
+                return array[
+                        x * x_stride +
+                        y * y_stride +
+                        z * (3) +
+                        n
+                ];
+        }
+	unsigned long x_stride, y_stride;
+
+	// This is a flexible array member, the actual size would be
+	// determined by the actual size used to call malloc (actually
+	// posix_memalign() in the case of openEMS, in the function
+	// Create_N_3DArray_Flat_v4sf().
+	//
+	// It's technically a standard-nonconforming undefined behavior,
+	// but is a well-known technique and it's important here to
+	// avoid the cost of dereferencing
+	float array[1];
+};
+typedef struct _N_3DArray N_3DArray;
+
 void Delete1DArray_v4sf(f4vector* array);
 void Delete3DArray_v4sf(f4vector*** array, const unsigned int* numLines);
 void Delete_N_3DArray_v4sf(f4vector**** array, const unsigned int* numLines);
 f4vector* Create1DArray_v4sf(const unsigned int numLines);
 f4vector*** Create3DArray_v4sf(const unsigned int* numLines);
+N_3DArray* Create_N_3DArray_Flat(const unsigned int* numLines);
 N_3DArray_v4sf *Create_N_3DArray_Flat_v4sf(const unsigned int* numLines);
 
 // *************************************************************************************
