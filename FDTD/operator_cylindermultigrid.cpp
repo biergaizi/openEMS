@@ -225,13 +225,13 @@ void Operator_CylinderMultiGrid::FillMissingDataStorage()
 					Calc_EffMatPos(ny,pos,EffMat,vPrims);
 
 					if (m_epsR)
-						m_epsR[ny][pos[0]][pos[1]][pos[2]] =  EffMat[0];
+						(*m_epsR)(ny, pos[0], pos[1], pos[2]) =  EffMat[0];
 					if (m_kappa)
-						m_kappa[ny][pos[0]][pos[1]][pos[2]] =  EffMat[1];
+						(*m_kappa)(ny, pos[0], pos[1], pos[2]) =  EffMat[1];
 					if (m_mueR)
-						m_mueR[ny][pos[0]][pos[1]][pos[2]] =  EffMat[2];
+						(*m_mueR)(ny, pos[0], pos[1], pos[2]) =  EffMat[2];
 					if (m_sigma)
-						m_sigma[ny][pos[0]][pos[1]][pos[2]] =  EffMat[3];
+						(*m_sigma)(ny, pos[0], pos[1], pos[2]) =  EffMat[3];
 				}
 			}
 		}

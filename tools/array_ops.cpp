@@ -190,3 +190,8 @@ N_3DArray* Create_N_3DArray_Flat(const unsigned int* numLines)
 
 	return n_3d_array;
 }
+
+void Delete_N_3DArray_Flat(N_3DArray* array, const unsigned int* numLines)
+{
+	free(array);
+}
