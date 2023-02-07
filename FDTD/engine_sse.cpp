@@ -35,8 +35,8 @@ Engine_sse::Engine_sse(const Operator_sse* op) : Engine(op)
 {
 	m_type = SSE;
 	Op = op;
-	//f4_volt = 0;
-	//f4_curr = 0;
+	f4_volt_ptr = 0;
+	f4_curr_ptr = 0;
 	numVectors =  ceil((double)numLines[2]/4.0);
 
 	// speed up the calculation of denormal floating point values (flush-to-zero)
@@ -72,10 +72,10 @@ void Engine_sse::Init()
 void Engine_sse::Reset()
 {
 	Engine::Reset();
-	//Delete_N_3DArray_Flat_v4sf(f4_volt,numLines);
-	//_f4_volt = 0;
-	//Delete_N_3DArray_Flat_v4sf(f4_curr,numLines);
-	//_f4_curr = 0;
+	Delete_Flat_N_3DArray(f4_volt_ptr,numLines);
+	f4_volt_ptr = 0;
+	Delete_Flat_N_3DArray(f4_curr_ptr,numLines);
+	f4_curr_ptr = 0;
 }
 
 #define Op_f4_vv (*(Op->f4_vv_ptr))

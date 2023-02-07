@@ -256,17 +256,17 @@ bool Operator_Ext_UPML::Create_UPML(Operator* op, const int ui_BC[6], const unsi
 
 void Operator_Ext_UPML::DeleteOp()
 {
-	//Delete_N_3DArray<FDTD_FLOAT>(vv,m_numLines);
+	Delete_Flat_N_3DArray(vv_ptr,m_numLines);
 	vv_ptr = NULL;
-	//Delete_N_3DArray<FDTD_FLOAT>(vvfo,m_numLines);
+	Delete_Flat_N_3DArray(vvfo_ptr,m_numLines);
 	vvfo_ptr = NULL;
-	//Delete_N_3DArray<FDTD_FLOAT>(vvfn,m_numLines);
+	Delete_Flat_N_3DArray(vvfn_ptr,m_numLines);
 	vvfn_ptr = NULL;
-	//Delete_N_3DArray<FDTD_FLOAT>(ii,m_numLines);
+	Delete_Flat_N_3DArray(ii_ptr,m_numLines);
 	ii_ptr = NULL;
-	//Delete_N_3DArray<FDTD_FLOAT>(iifo,m_numLines);
+	Delete_Flat_N_3DArray(iifo_ptr,m_numLines);
 	iifo_ptr = NULL;
-	//Delete_N_3DArray<FDTD_FLOAT>(iifn,m_numLines);
+	Delete_Flat_N_3DArray(iifn_ptr,m_numLines);
 	iifn_ptr = NULL;
 }
 

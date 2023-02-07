@@ -117,4 +117,10 @@ void Delete_Flat_N_3DArray(Flat_N_3DArray<T>* array, const unsigned int* numLine
 	free(array);
 }
 
+template <>
+inline void Delete_Flat_N_3DArray<f4vector>(Flat_N_3DArray<f4vector>* array, const unsigned int* numLines)
+{
+	FREE(array);
+}
+
 #endif

@@ -36,9 +36,9 @@ Engine_Ext_UPML::Engine_Ext_UPML(Operator_Ext_UPML* op_ext) : Engine_Extension(o
 
 Engine_Ext_UPML::~Engine_Ext_UPML()
 {
-	//Delete_N_3DArray<FDTD_FLOAT>(volt_flux,m_Op_UPML->m_numLines);
+	Delete_Flat_N_3DArray(volt_flux_ptr,m_Op_UPML->m_numLines);
 	volt_flux_ptr=NULL;
-	//Delete_N_3DArray<FDTD_FLOAT>(curr_flux,m_Op_UPML->m_numLines);
+	Delete_Flat_N_3DArray(curr_flux_ptr,m_Op_UPML->m_numLines);
 	curr_flux_ptr=NULL;
 }
 

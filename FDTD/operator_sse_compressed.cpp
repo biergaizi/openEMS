@@ -163,14 +163,14 @@ bool Operator_SSE_Compressed::CompressOperator()
 		}
 	}
 
-	//Delete_N_3DArray_v4sf(f4_vv,numLines);
-	//Delete_N_3DArray_v4sf(f4_vi,numLines);
-	//Delete_N_3DArray_v4sf(f4_iv,numLines);
-	//Delete_N_3DArray_v4sf(f4_ii,numLines);
-	//f4_vv = 0;
-	//f4_vi = 0;
-	//f4_iv = 0;
-	//f4_ii = 0;
+	Delete_Flat_N_3DArray(f4_vv_ptr,numLines);
+	Delete_Flat_N_3DArray(f4_vi_ptr,numLines);
+	Delete_Flat_N_3DArray(f4_iv_ptr,numLines);
+	Delete_Flat_N_3DArray(f4_ii_ptr,numLines);
+	f4_vv_ptr = 0;
+	f4_vi_ptr = 0;
+	f4_iv_ptr = 0;
+	f4_ii_ptr = 0;
 
 	return true;
 }
