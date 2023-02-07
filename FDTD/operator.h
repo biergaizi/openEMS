@@ -23,6 +23,7 @@
 #include "excitation.h"
 #include "Common/operator_base.h"
 #include "tools/array_ops.h"
+#include "tools/flat_array_ops.h"
 
 class Operator_Extension;
 class Operator_Ext_Excitation;
@@ -249,10 +250,10 @@ protected:
 	int m_BC_Size[6];
 
 	//store material properties for post-processing
-	N_3DArray* m_epsR;
-	N_3DArray* m_kappa;
-	N_3DArray* m_mueR;
-	N_3DArray* m_sigma;
+	Flat_N_3DArray<FDTD_FLOAT>* m_epsR;
+	Flat_N_3DArray<FDTD_FLOAT>* m_kappa;
+	Flat_N_3DArray<FDTD_FLOAT>* m_mueR;
+	Flat_N_3DArray<FDTD_FLOAT>* m_sigma;
 
 	//EC elements, internal only!
 	virtual void Init_EC();

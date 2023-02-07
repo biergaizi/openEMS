@@ -28,8 +28,8 @@ Engine_Ext_UPML::Engine_Ext_UPML(Operator_Ext_UPML* op_ext) : Engine_Extension(o
 	//this ABC extension should be executed first!
 	m_Priority = ENG_EXT_PRIO_UPML;
 
-	volt_flux_ptr = Create_N_3DArray_Flat(m_Op_UPML->m_numLines);
-	curr_flux_ptr = Create_N_3DArray_Flat(m_Op_UPML->m_numLines);
+	volt_flux_ptr = Create_Flat_N_3DArray<FDTD_FLOAT>(m_Op_UPML->m_numLines);
+	curr_flux_ptr = Create_Flat_N_3DArray<FDTD_FLOAT>(m_Op_UPML->m_numLines);
 
 	SetNumberOfThreads(1);
 }
@@ -66,9 +66,9 @@ void Engine_Ext_UPML::DoPreVoltageUpdates(int threadID)
 	unsigned int loc_pos[3];
 	FDTD_FLOAT f_help;
 
-	N_3DArray& volt_flux = *volt_flux_ptr;
-	N_3DArray& op_upml_vv = *(m_Op_UPML->vv_ptr);
-	N_3DArray& op_upml_vvfo = *(m_Op_UPML->vvfo_ptr);
+	Flat_N_3DArray<FDTD_FLOAT>& volt_flux = *volt_flux_ptr;
+	Flat_N_3DArray<FDTD_FLOAT>& op_upml_vv = *(m_Op_UPML->vv_ptr);
+	Flat_N_3DArray<FDTD_FLOAT>& op_upml_vvfo = *(m_Op_UPML->vvfo_ptr);
 
 	switch (m_Eng->GetType())
 	{
@@ -184,8 +184,8 @@ void Engine_Ext_UPML::DoPostVoltageUpdates(int threadID)
 	unsigned int loc_pos[3];
 	FDTD_FLOAT f_help;
 
-	N_3DArray& volt_flux = *volt_flux_ptr;
-	N_3DArray& op_upml_vvfn = *(m_Op_UPML->vvfn_ptr);
+	Flat_N_3DArray<FDTD_FLOAT>& volt_flux = *volt_flux_ptr;
+	Flat_N_3DArray<FDTD_FLOAT>& op_upml_vvfn = *(m_Op_UPML->vvfn_ptr);
 
 	switch (m_Eng->GetType())
 	{
@@ -292,9 +292,9 @@ void Engine_Ext_UPML::DoPreCurrentUpdates(int threadID)
 	unsigned int loc_pos[3];
 	FDTD_FLOAT f_help;
 
-	N_3DArray& curr_flux = *curr_flux_ptr;
-	N_3DArray& op_upml_ii = *(m_Op_UPML->ii_ptr);
-	N_3DArray& op_upml_iifo = *(m_Op_UPML->iifo_ptr);
+	Flat_N_3DArray<FDTD_FLOAT>& curr_flux = *curr_flux_ptr;
+	Flat_N_3DArray<FDTD_FLOAT>& op_upml_ii = *(m_Op_UPML->ii_ptr);
+	Flat_N_3DArray<FDTD_FLOAT>& op_upml_iifo = *(m_Op_UPML->iifo_ptr);
 
 	switch (m_Eng->GetType())
 	{
@@ -410,9 +410,9 @@ void Engine_Ext_UPML::DoPostCurrentUpdates(int threadID)
 	unsigned int loc_pos[3];
 	FDTD_FLOAT f_help;
 
-	N_3DArray& curr_flux = *curr_flux_ptr;
-	N_3DArray& op_upml_ii = *(m_Op_UPML->ii_ptr);
-	N_3DArray& op_upml_iifn = *(m_Op_UPML->iifn_ptr);
+	Flat_N_3DArray<FDTD_FLOAT>& curr_flux = *curr_flux_ptr;
+	Flat_N_3DArray<FDTD_FLOAT>& op_upml_ii = *(m_Op_UPML->ii_ptr);
+	Flat_N_3DArray<FDTD_FLOAT>& op_upml_iifn = *(m_Op_UPML->iifn_ptr);
 
 	switch (m_Eng->GetType())
 	{

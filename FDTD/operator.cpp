@@ -116,13 +116,13 @@ void Operator::Delete()
 		delete[] EC_R[n];EC_R[n]=0;
 	}
 
-	Delete_N_3DArray_Flat(m_epsR,numLines);
+	Delete_Flat_N_3DArray(m_epsR,numLines);
 	m_epsR=0;
-	Delete_N_3DArray_Flat(m_kappa,numLines);
+	Delete_Flat_N_3DArray(m_kappa,numLines);
 	m_kappa=0;
-	Delete_N_3DArray_Flat(m_mueR,numLines);
+	Delete_Flat_N_3DArray(m_mueR,numLines);
 	m_mueR=0;
-	Delete_N_3DArray_Flat(m_sigma,numLines);
+	Delete_Flat_N_3DArray(m_sigma,numLines);
 	m_sigma=0;
 }
 
@@ -564,30 +564,30 @@ void Operator::DumpOperator2File(string filename)
 
 	if (Op_Ext_Exc)
 	{
-		N_3DArray* exc = NULL;
+		Flat_N_3DArray<FDTD_FLOAT>* exc = NULL;
 		if (Op_Ext_Exc->Volt_Count>0)
 		{
-			exc = Create_N_3DArray_Flat(numLines);
+			exc = Create_Flat_N_3DArray<FDTD_FLOAT>(numLines);
 			for (unsigned int n=0; n<  Op_Ext_Exc->Volt_Count; ++n)
 				(*exc)(  Op_Ext_Exc->Volt_dir[n],   Op_Ext_Exc->Volt_index[0][n],  Op_Ext_Exc->Volt_index[1][n],  Op_Ext_Exc->Volt_index[2][n]) =   Op_Ext_Exc->Volt_amp[n];
 			vtk_Writer->AddVectorField("exc_volt",exc);
-			Delete_N_3DArray_Flat(exc,numLines);
+			Delete_Flat_N_3DArray(exc,numLines);
 		}
 
 		if (  Op_Ext_Exc->Curr_Count>0)
 		{
-			exc = Create_N_3DArray_Flat(numLines);
+			exc = Create_Flat_N_3DArray<FDTD_FLOAT>(numLines);
 			for (unsigned int n=0; n<  Op_Ext_Exc->Curr_Count; ++n)
 				(*exc)(  Op_Ext_Exc->Curr_dir[n],   Op_Ext_Exc->Curr_index[0][n],  Op_Ext_Exc->Curr_index[1][n],  Op_Ext_Exc->Curr_index[2][n]) =   Op_Ext_Exc->Curr_amp[n];
 			vtk_Writer->AddVectorField("exc_curr",exc);
-			Delete_N_3DArray_Flat(exc,numLines);
+			Delete_Flat_N_3DArray(exc,numLines);
 		}
 	}
 
-	N_3DArray* vv_temp = Create_N_3DArray_Flat(numLines);
-	N_3DArray* vi_temp = Create_N_3DArray_Flat(numLines);
-	N_3DArray* iv_temp = Create_N_3DArray_Flat(numLines);
-	N_3DArray* ii_temp = Create_N_3DArray_Flat(numLines);
+	Flat_N_3DArray<FDTD_FLOAT>* vv_temp = Create_Flat_N_3DArray<FDTD_FLOAT>(numLines);
+	Flat_N_3DArray<FDTD_FLOAT>* vi_temp = Create_Flat_N_3DArray<FDTD_FLOAT>(numLines);
+	Flat_N_3DArray<FDTD_FLOAT>* iv_temp = Create_Flat_N_3DArray<FDTD_FLOAT>(numLines);
+	Flat_N_3DArray<FDTD_FLOAT>* ii_temp = Create_Flat_N_3DArray<FDTD_FLOAT>(numLines);
 
 	unsigned int pos[3], n;
 	for (n=0; n<3; n++)
@@ -603,13 +603,13 @@ void Operator::DumpOperator2File(string filename)
 
 
 	vtk_Writer->AddVectorField("vv",vv_temp);
-	Delete_N_3DArray_Flat(vv_temp,numLines);
+	Delete_Flat_N_3DArray(vv_temp,numLines);
 	vtk_Writer->AddVectorField("vi",vi_temp);
-	Delete_N_3DArray_Flat(vi_temp,numLines);
+	Delete_Flat_N_3DArray(vi_temp,numLines);
 	vtk_Writer->AddVectorField("iv",iv_temp);
-	Delete_N_3DArray_Flat(iv_temp,numLines);
+	Delete_Flat_N_3DArray(iv_temp,numLines);
 	vtk_Writer->AddVectorField("ii",ii_temp);
-	Delete_N_3DArray_Flat(ii_temp,numLines);
+	Delete_Flat_N_3DArray(ii_temp,numLines);
 
 	if (vtk_Writer->Write()==false)
 		cerr << "Operator::DumpOperator2File: Error: Can't write file... skipping!" << endl;
@@ -742,10 +742,10 @@ void Operator::DumpMaterial2File(string filename)
 
 	cout << "Operator: Dumping material information to vtk file: " << filename << " ..."  << flush;
 
-	N_3DArray* epsilon = Create_N_3DArray_Flat(numLines);
-	N_3DArray* mue     = Create_N_3DArray_Flat(numLines);
-	N_3DArray* kappa   = Create_N_3DArray_Flat(numLines);
-	N_3DArray* sigma   = Create_N_3DArray_Flat(numLines);
+	Flat_N_3DArray<FDTD_FLOAT>* epsilon = Create_Flat_N_3DArray<FDTD_FLOAT>(numLines);
+	Flat_N_3DArray<FDTD_FLOAT>* mue     = Create_Flat_N_3DArray<FDTD_FLOAT>(numLines);
+	Flat_N_3DArray<FDTD_FLOAT>* kappa   = Create_Flat_N_3DArray<FDTD_FLOAT>(numLines);
+	Flat_N_3DArray<FDTD_FLOAT>* sigma   = Create_Flat_N_3DArray<FDTD_FLOAT>(numLines);
 
 	unsigned int pos[3];
 	for (pos[0]=0; pos[0]<numLines[0]; ++pos[0])
@@ -775,13 +775,13 @@ void Operator::DumpMaterial2File(string filename)
 	vtk_Writer->SetNativeDump(true);
 
 	vtk_Writer->AddVectorField("epsilon",epsilon);
-	Delete_N_3DArray_Flat(epsilon,numLines);
+	Delete_Flat_N_3DArray(epsilon,numLines);
 	vtk_Writer->AddVectorField("mue",mue);
-	Delete_N_3DArray_Flat(mue,numLines);
+	Delete_Flat_N_3DArray(mue,numLines);
 	vtk_Writer->AddVectorField("kappa",kappa);
-	Delete_N_3DArray_Flat(kappa,numLines);
+	Delete_Flat_N_3DArray(kappa,numLines);
 	vtk_Writer->AddVectorField("sigma",sigma);
-	Delete_N_3DArray_Flat(sigma,numLines);
+	Delete_Flat_N_3DArray(sigma,numLines);
 
 	if (vtk_Writer->Write()==false)
 		cerr << "Operator::DumpMaterial2File: Error: Can't write file... skipping!" << endl;
@@ -853,29 +853,29 @@ void Operator::InitDataStorage()
 	{
 		if (g_settings.GetVerboseLevel()>0)
 			cerr << "Operator::InitDataStorage(): Storing epsR material data..." << endl;
-		Delete_N_3DArray_Flat(m_epsR,numLines);
-		m_epsR = Create_N_3DArray_Flat(numLines);
+		Delete_Flat_N_3DArray(m_epsR,numLines);
+		m_epsR = Create_Flat_N_3DArray<FDTD_FLOAT>(numLines);
 	}
 	if (m_StoreMaterial[1])
 	{
 		if (g_settings.GetVerboseLevel()>0)
 			cerr << "Operator::InitDataStorage(): Storing kappa material data..." << endl;
-		Delete_N_3DArray_Flat(m_kappa,numLines);
-		m_kappa = Create_N_3DArray_Flat(numLines);
+		Delete_Flat_N_3DArray(m_kappa,numLines);
+		m_kappa = Create_Flat_N_3DArray<FDTD_FLOAT>(numLines);
 	}
 	if (m_StoreMaterial[2])
 	{
 		if (g_settings.GetVerboseLevel()>0)
 			cerr << "Operator::InitDataStorage(): Storing muR material data..." << endl;
-		Delete_N_3DArray_Flat(m_mueR,numLines);
-		m_mueR = Create_N_3DArray_Flat(numLines);
+		Delete_Flat_N_3DArray(m_mueR,numLines);
+		m_mueR = Create_Flat_N_3DArray<FDTD_FLOAT>(numLines);
 	}
 	if (m_StoreMaterial[3])
 	{
 		if (g_settings.GetVerboseLevel()>0)
 			cerr << "Operator::InitDataStorage(): Storing sigma material data..." << endl;
-		Delete_N_3DArray_Flat(m_sigma,numLines);
-		m_sigma = Create_N_3DArray_Flat(numLines);
+		Delete_Flat_N_3DArray(m_sigma,numLines);
+		m_sigma = Create_Flat_N_3DArray<FDTD_FLOAT>(numLines);
 	}
 }
 
@@ -885,28 +885,28 @@ void Operator::CleanupMaterialStorage()
 	{
 		if (g_settings.GetVerboseLevel()>0)
 			cerr << "Operator::CleanupMaterialStorage(): Delete epsR material data..." << endl;
-		Delete_N_3DArray_Flat(m_epsR,numLines);
+		Delete_Flat_N_3DArray(m_epsR,numLines);
 		m_epsR = NULL;
 	}
 	if (!m_StoreMaterial[1] && m_kappa)
 	{
 		if (g_settings.GetVerboseLevel()>0)
 			cerr << "Operator::CleanupMaterialStorage(): Delete kappa material data..." << endl;
-		Delete_N_3DArray_Flat(m_kappa,numLines);
+		Delete_Flat_N_3DArray(m_kappa,numLines);
 		m_kappa = NULL;
 	}
 	if (!m_StoreMaterial[2] && m_mueR)
 	{
 		if (g_settings.GetVerboseLevel()>0)
 			cerr << "Operator::CleanupMaterialStorage(): Delete mueR material data..." << endl;
-		Delete_N_3DArray_Flat(m_mueR,numLines);
+		Delete_Flat_N_3DArray(m_mueR,numLines);
 		m_mueR = NULL;
 	}
 	if (!m_StoreMaterial[3] && m_sigma)
 	{
 		if (g_settings.GetVerboseLevel()>0)
 			cerr << "Operator::CleanupMaterialStorage(): Delete sigma material data..." << endl;
-		Delete_N_3DArray_Flat(m_sigma,numLines);
+		Delete_Flat_N_3DArray(m_sigma,numLines);
 		m_sigma = NULL;
 	}
 }

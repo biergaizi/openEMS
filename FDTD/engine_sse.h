@@ -56,8 +56,8 @@ protected:
 	unsigned int numVectors;
 
 public: //public access to the sse arrays for efficient extensions access... use careful...
-	N_3DArray_v4sf *f4_volt_ptr;
-	N_3DArray_v4sf *f4_curr_ptr;
+	Flat_N_3DArray<f4vector>* f4_volt_ptr;
+	Flat_N_3DArray<f4vector>* f4_curr_ptr;
 };
 
 #endif // ENGINE_SSE_H

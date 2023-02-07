@@ -62,8 +62,8 @@ void Engine_sse::Init()
 	Delete_N_3DArray(curr,numLines);
 	curr=NULL; // not used
 
-	f4_volt_ptr = Create_N_3DArray_Flat_v4sf(numLines);
-	f4_curr_ptr = Create_N_3DArray_Flat_v4sf(numLines);
+	f4_volt_ptr = Create_Flat_N_3DArray<f4vector>(numLines);
+	f4_curr_ptr = Create_Flat_N_3DArray<f4vector>(numLines);
 }
 
 #define f4_volt (*f4_volt_ptr)

@@ -239,7 +239,7 @@ void VTK_File_Writer::AddVectorField(string fieldname, float const* const* const
 	array->Delete();
 }
 
-void VTK_File_Writer::AddVectorField(string fieldname, N_3DArray* field)
+void VTK_File_Writer::AddVectorField(string fieldname, Flat_N_3DArray<FDTD_FLOAT>* field)
 {
 	vtkFloatArray* array = vtkFloatArray::New();
 	array->SetNumberOfComponents(3);

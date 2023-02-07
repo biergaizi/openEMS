@@ -21,6 +21,7 @@
 #include "FDTD/operator.h"
 #include "operator_extension.h"
 #include "tools/array_ops.h"
+#include "tools/flat_array_ops.h"
 
 class FunctionParser;
 
@@ -96,12 +97,12 @@ protected:
 	virtual FDTD_FLOAT& GetIIFO(int ny, unsigned int pos[3]) {return (*iifo_ptr)(ny, pos[0], pos[1], pos[2]);}
 	virtual FDTD_FLOAT& GetIIFN(int ny, unsigned int pos[3]) {return (*iifn_ptr)(ny, pos[0], pos[1], pos[2]);}
 
-	N_3DArray* vv_ptr;   //calc new voltage from old voltage
-	N_3DArray* vvfo_ptr; //calc new voltage from old voltage flux
-	N_3DArray* vvfn_ptr; //calc new voltage from new voltage flux
-	N_3DArray* ii_ptr;   //calc new current from old current
-	N_3DArray* iifo_ptr; //calc new current from old current flux
-	N_3DArray* iifn_ptr; //calc new current from new current flux
+	Flat_N_3DArray<FDTD_FLOAT>* vv_ptr;   //calc new voltage from old voltage
+	Flat_N_3DArray<FDTD_FLOAT>* vvfo_ptr; //calc new voltage from old voltage flux
+	Flat_N_3DArray<FDTD_FLOAT>* vvfn_ptr; //calc new voltage from new voltage flux
+	Flat_N_3DArray<FDTD_FLOAT>* ii_ptr;   //calc new current from old current
+	Flat_N_3DArray<FDTD_FLOAT>* iifo_ptr; //calc new current from old current flux
+	Flat_N_3DArray<FDTD_FLOAT>* iifn_ptr; //calc new current from new current flux
 };
 
 #endif // OPERATOR_EXT_UPML_H

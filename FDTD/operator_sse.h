@@ -19,7 +19,7 @@
 #define OPERATOR_SSE_H
 
 #include "operator.h"
-#include "tools/array_ops.h"
+#include "tools/flat_array_ops.h"
 
 #define f4_vv (*f4_vv_ptr)
 #define f4_vi (*f4_vi_ptr)
@@ -59,10 +59,10 @@ protected:
 
 	// engine/post-proc needs access
 public:
-	N_3DArray_v4sf *f4_vv_ptr; //calc new voltage from old voltage
-	N_3DArray_v4sf *f4_vi_ptr; //calc new voltage from old current
-	N_3DArray_v4sf *f4_iv_ptr; //calc new current from old current
-	N_3DArray_v4sf *f4_ii_ptr; //calc new current from old voltage
+	Flat_N_3DArray<f4vector>* f4_vv_ptr; //calc new voltage from old voltage
+	Flat_N_3DArray<f4vector>* f4_vi_ptr; //calc new voltage from old current
+	Flat_N_3DArray<f4vector>* f4_iv_ptr; //calc new current from old current
+	Flat_N_3DArray<f4vector>* f4_ii_ptr; //calc new current from old voltage
 };
 
 #endif // OPERATOR_SSE_H

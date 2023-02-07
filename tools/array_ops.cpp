@@ -21,15 +21,6 @@
 
 using namespace std;
 
-#ifdef WIN32
-#include <malloc.h>
-#define MEMALIGN( array, alignment, size ) !(*array = _mm_malloc( size, alignment ))
-#define FREE( array ) _mm_free( array )
-#else
-#define MEMALIGN( array, alignment, size ) posix_memalign( array, alignment, size )
-#define FREE( array ) free( array )
-#endif
-
 void Delete1DArray_v4sf(f4vector* array)
 {
 	if (array==NULL) return;
@@ -123,75 +114,4 @@ f4vector*** Create3DArray_v4sf(const unsigned int* numLines)
 		}
 	}
 	return array;
-}
-
-N_3DArray_v4sf *Create_N_3DArray_Flat_v4sf(const unsigned int* numLines)
-{
-	N_3DArray_v4sf *n_3d_array_v4sf;
-	unsigned int n_max = 3;
-	unsigned int x_max = numLines[0];
-	unsigned int y_max = numLines[1];
-	unsigned int z_max = ceil((double)numLines[2] / 4.0);
-
-	// Size of the header itself.
-	// If the definition of N_3DArray_v4sf has been changed,
-	// all its data type must be a multiple of 16 (F4VECTOR_SIZE).
-	static_assert(sizeof(N_3DArray_v4sf) % F4VECTOR_SIZE == 0);
-	size_t size = sizeof(N_3DArray_v4sf);
-
-	// and the actual memory of the array[1] flexible array member
-	size += F4VECTOR_SIZE * n_max * x_max * y_max * z_max;
-
-	// array[0] is counted twice, so remove one element.
-	size -= F4VECTOR_SIZE;
-
-	if (MEMALIGN( (void**)&n_3d_array_v4sf, 16, size))
-	{
-		cerr << "cannot allocate aligned memory" << endl;
-		exit(3);
-	}
-	memset(n_3d_array_v4sf, 0, size);
-
-	//n_3d_array_v4sf->n_max = n_max;
-	//n_3d_array_v4sf->x_max = x_max;
-	//n_3d_array_v4sf->y_max = y_max;
-	//n_3d_array_v4sf->z_max = z_max;
-	n_3d_array_v4sf->x_stride = y_max * z_max * n_max;
-	n_3d_array_v4sf->y_stride = z_max * n_max;
-
-	return n_3d_array_v4sf;
-}
-
-N_3DArray* Create_N_3DArray_Flat(const unsigned int* numLines)
-{
-	N_3DArray *n_3d_array;
-	unsigned int n_max = 3;
-	unsigned int x_max = numLines[0];
-	unsigned int y_max = numLines[1];
-	unsigned int z_max = numLines[2];
-
-	size_t size = sizeof(N_3DArray);
-
-	// and the actual memory of the array[1] flexible array member
-	size += sizeof(float) * n_max * x_max * y_max * z_max;
-
-	// array[0] is counted twice, so remove one element.
-	size -= sizeof(float);
-
-	if (MEMALIGN( (void**)&n_3d_array, 16, size))
-	{
-		cerr << "cannot allocate aligned memory" << endl;
-		exit(3);
-	}
-	memset(n_3d_array, 0, size);
-
-	n_3d_array->x_stride = y_max * z_max * n_max;
-	n_3d_array->y_stride = z_max * n_max;
-
-	return n_3d_array;
-}
-
-void Delete_N_3DArray_Flat(N_3DArray* array, const unsigned int* numLines)
-{
-	free(array);
 }

@@ -22,6 +22,7 @@
 #include "FDTD/engine.h"
 #include "FDTD/operator.h"
 #include "tools/array_ops.h"
+#include "tools/flat_array_ops.h"
 
 class Operator_Ext_UPML;
 
@@ -49,8 +50,8 @@ protected:
 	vector<unsigned int> m_start;
 	vector<unsigned int> m_numX;
 
-	N_3DArray* volt_flux_ptr;
-	N_3DArray* curr_flux_ptr;
+	Flat_N_3DArray<FDTD_FLOAT>* volt_flux_ptr;
+	Flat_N_3DArray<FDTD_FLOAT>* curr_flux_ptr;
 };
 
 #endif // ENGINE_EXT_UPML_H

@@ -372,12 +372,12 @@ bool Operator_Ext_UPML::BuildExtension()
 		return false;
 
 	DeleteOp();
-	vv_ptr = Create_N_3DArray_Flat(m_numLines);
-	vvfo_ptr = Create_N_3DArray_Flat(m_numLines);
-	vvfn_ptr = Create_N_3DArray_Flat(m_numLines);
-	ii_ptr = Create_N_3DArray_Flat(m_numLines);
-	iifo_ptr = Create_N_3DArray_Flat(m_numLines);
-	iifn_ptr = Create_N_3DArray_Flat(m_numLines);
+	vv_ptr = Create_Flat_N_3DArray<FDTD_FLOAT>(m_numLines);
+	vvfo_ptr = Create_Flat_N_3DArray<FDTD_FLOAT>(m_numLines);
+	vvfn_ptr = Create_Flat_N_3DArray<FDTD_FLOAT>(m_numLines);
+	ii_ptr = Create_Flat_N_3DArray<FDTD_FLOAT>(m_numLines);
+	iifo_ptr = Create_Flat_N_3DArray<FDTD_FLOAT>(m_numLines);
+	iifn_ptr = Create_Flat_N_3DArray<FDTD_FLOAT>(m_numLines);
 
 	unsigned int pos[3];
 	unsigned int loc_pos[3];
