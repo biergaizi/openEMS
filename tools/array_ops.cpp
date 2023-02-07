@@ -127,7 +127,6 @@ f4vector*** Create3DArray_v4sf(const unsigned int* numLines)
 
 N_3DArray_v4sf *Create_N_3DArray_Flat_v4sf(const unsigned int* numLines)
 {
-	N_3DArray_v4sf *n_3d_array_v4sf;
 	unsigned int n_max = 3;
 	unsigned int x_max = numLines[0];
 	unsigned int y_max = numLines[1];
@@ -145,13 +144,15 @@ N_3DArray_v4sf *Create_N_3DArray_Flat_v4sf(const unsigned int* numLines)
 	// array[0] is counted twice, so remove one element.
 	size -= F4VECTOR_SIZE;
 
-	if (MEMALIGN( (void**)&n_3d_array_v4sf, 16, size))
+	void *buf;
+	if (MEMALIGN(&buf, 16, size))
 	{
 		cerr << "cannot allocate aligned memory" << endl;
 		exit(3);
 	}
-	memset(n_3d_array_v4sf, 0, size);
+	memset(buf, 0, size);
 
+	N_3DArray_v4sf *n_3d_array_v4sf = new (buf) N_3DArray_v4sf;
 	//n_3d_array_v4sf->n_max = n_max;
 	//n_3d_array_v4sf->x_max = x_max;
 	//n_3d_array_v4sf->y_max = y_max;
@@ -164,7 +165,6 @@ N_3DArray_v4sf *Create_N_3DArray_Flat_v4sf(const unsigned int* numLines)
 
 N_3DArray* Create_N_3DArray_Flat(const unsigned int* numLines)
 {
-	N_3DArray *n_3d_array;
 	unsigned int n_max = 3;
 	unsigned int x_max = numLines[0];
 	unsigned int y_max = numLines[1];
@@ -178,13 +178,15 @@ N_3DArray* Create_N_3DArray_Flat(const unsigned int* numLines)
 	// array[0] is counted twice, so remove one element.
 	size -= sizeof(float);
 
-	if (MEMALIGN( (void**)&n_3d_array, 16, size))
+	void *buf;
+	if (MEMALIGN(&buf, 16, size))
 	{
 		cerr << "cannot allocate aligned memory" << endl;
 		exit(3);
 	}
-	memset(n_3d_array, 0, size);
+	memset(buf, 0, size);
 
+	N_3DArray *n_3d_array = new (buf) N_3DArray;
 	n_3d_array->x_stride = y_max * z_max * n_max;
 	n_3d_array->y_stride = z_max * n_max;
 
