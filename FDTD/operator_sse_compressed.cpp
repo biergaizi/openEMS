@@ -124,6 +124,11 @@ bool Operator_SSE_Compressed::CompressOperator()
 
 	map<SSE_coeff,unsigned int> lookUpMap;
 
+	Flat_N_3DArray<f4vector> &f4_vv = *f4_vv_ptr;
+	Flat_N_3DArray<f4vector> &f4_vi = *f4_vi_ptr;
+	Flat_N_3DArray<f4vector> &f4_iv = *f4_iv_ptr;
+	Flat_N_3DArray<f4vector> &f4_ii = *f4_ii_ptr;
+
 	unsigned int pos[3];
 	for (pos[0]=0; pos[0]<numLines[0]; ++pos[0])
 	{
