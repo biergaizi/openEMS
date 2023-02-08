@@ -94,7 +94,7 @@ inline Flat_N_3DArray<f4vector>* Create_Flat_N_3DArray<f4vector>(const unsigned 
 	printf("allocating %llu bytes\n", size);
 
 	void *buf;
-	if (MEMALIGN(&buf, 16, size))
+	if (MEMALIGN(&buf, 32, size))
 	{
 		std::cerr << "cannot allocate aligned memory" << std::endl;
 		exit(3);
