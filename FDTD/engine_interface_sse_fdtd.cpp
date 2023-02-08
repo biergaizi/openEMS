@@ -34,11 +34,11 @@ Engine_Interface_SSE_FDTD::~Engine_Interface_SSE_FDTD()
 	m_Eng_SSE=NULL;
 }
 
-#define f4_volt (*m_Eng_SSE->Engine_sse::f4_volt_ptr)
-#define f4_curr (*m_Eng_SSE->Engine_sse::f4_curr_ptr)
-
 double Engine_Interface_SSE_FDTD::CalcFastEnergy() const
 {
+	Flat_N_3DArray<f4vector> &f4_volt = *m_Eng_SSE->Engine_sse::f4_volt_ptr;
+	Flat_N_3DArray<f4vector> &f4_curr = *m_Eng_SSE->Engine_sse::f4_curr_ptr;
+
 	f4vector E_energy;
 	E_energy.f[0]=0;
 	E_energy.f[1]=0;

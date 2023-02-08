@@ -66,9 +66,6 @@ void Engine_sse::Init()
 	f4_curr_ptr = Create_Flat_N_3DArray<f4vector>(numLines);
 }
 
-#define f4_volt (*f4_volt_ptr)
-#define f4_curr (*f4_curr_ptr)
-
 void Engine_sse::Reset()
 {
 	Engine::Reset();
@@ -78,13 +75,13 @@ void Engine_sse::Reset()
 	f4_curr_ptr = 0;
 }
 
-#define Op_f4_vv (*(Op->f4_vv_ptr))
-#define Op_f4_vi (*(Op->f4_vi_ptr))
-#define Op_f4_iv (*(Op->f4_iv_ptr))
-#define Op_f4_ii (*(Op->f4_ii_ptr))
-
 void Engine_sse::UpdateVoltages(unsigned int startX, unsigned int numX)
 {
+	Flat_N_3DArray<f4vector> &f4_volt = *f4_volt_ptr;
+	Flat_N_3DArray<f4vector> &f4_curr = *f4_curr_ptr;
+	Flat_N_3DArray<f4vector> &op_f4_vv = *Op->f4_vv_ptr;
+	Flat_N_3DArray<f4vector> &op_f4_vi = *Op->f4_vi_ptr;
+
 	unsigned int pos[3];
 	bool shift[2];
 	f4vector temp;
@@ -100,9 +97,9 @@ void Engine_sse::UpdateVoltages(unsigned int startX, unsigned int numX)
 			{
 				// x-polarization
 				f4_volt(0, pos[0], pos[1], pos[2]).v *=
-				    Op_f4_vv(0, pos[0], pos[1], pos[2]).v;
+				    op_f4_vv(0, pos[0], pos[1], pos[2]).v;
 				f4_volt(0, pos[0], pos[1], pos[2]).v +=
-				    Op_f4_vi(0, pos[0], pos[1], pos[2]).v * (
+				    op_f4_vi(0, pos[0], pos[1], pos[2]).v * (
 				        f4_curr(2, pos[0], pos[1],          pos[2]  ).v -
 				        f4_curr(2, pos[0], pos[1]-shift[1], pos[2]  ).v -
 				        f4_curr(1, pos[0], pos[1],          pos[2]  ).v +
@@ -111,9 +108,9 @@ void Engine_sse::UpdateVoltages(unsigned int startX, unsigned int numX)
 
 				// y-polarization
 				f4_volt(1, pos[0], pos[1], pos[2]).v *=
-				    Op_f4_vv(1, pos[0], pos[1], pos[2]).v;
+				    op_f4_vv(1, pos[0], pos[1], pos[2]).v;
 				f4_volt(1, pos[0], pos[1], pos[2]).v +=
-				    Op_f4_vi(1, pos[0], pos[1], pos[2]).v * (
+				    op_f4_vi(1, pos[0], pos[1], pos[2]).v * (
 				        f4_curr(0, pos[0],          pos[1], pos[2]  ).v -
 				        f4_curr(0, pos[0],          pos[1], pos[2]-1).v -
 				        f4_curr(2, pos[0],          pos[1], pos[2]  ).v +
@@ -122,9 +119,9 @@ void Engine_sse::UpdateVoltages(unsigned int startX, unsigned int numX)
 
 				// z-polarization
 				f4_volt(2, pos[0], pos[1], pos[2]).v *=
-				    Op_f4_vv(2, pos[0], pos[1], pos[2]).v;
+				    op_f4_vv(2, pos[0], pos[1], pos[2]).v;
 				f4_volt(2, pos[0], pos[1], pos[2]).v +=
-				    Op_f4_vi(2, pos[0], pos[1], pos[2]).v * (
+				    op_f4_vi(2, pos[0], pos[1], pos[2]).v * (
 				        f4_curr(1, pos[0],          pos[1],          pos[2]).v -
 				        f4_curr(1, pos[0]-shift[0], pos[1],          pos[2]).v -
 				        f4_curr(0, pos[0],          pos[1],          pos[2]).v +
@@ -139,9 +136,9 @@ void Engine_sse::UpdateVoltages(unsigned int startX, unsigned int numX)
 			temp.f[2] = f4_curr(1, pos[0], pos[1], numVectors-1).f[1];
 			temp.f[3] = f4_curr(1, pos[0], pos[1], numVectors-1).f[2];
 			f4_volt(0, pos[0], pos[1], 0).v *=
-			    Op_f4_vv(0, pos[0], pos[1], 0).v;
+			    op_f4_vv(0, pos[0], pos[1], 0).v;
 			f4_volt(0, pos[0], pos[1], 0).v +=
-			    Op_f4_vi(0, pos[0], pos[1], 0).v * (
+			    op_f4_vi(0, pos[0], pos[1], 0).v * (
 			        f4_curr(2, pos[0], pos[1],          0).v -
 			        f4_curr(2, pos[0], pos[1]-shift[1], 0).v -
 			        f4_curr(1, pos[0], pos[1],          0).v +
@@ -154,9 +151,9 @@ void Engine_sse::UpdateVoltages(unsigned int startX, unsigned int numX)
 			temp.f[2] = f4_curr(0, pos[0], pos[1], numVectors-1).f[1];
 			temp.f[3] = f4_curr(0, pos[0], pos[1], numVectors-1).f[2];
 			f4_volt(1, pos[0], pos[1], 0).v *=
-			    Op_f4_vv(1, pos[0], pos[1], 0).v;
+			    op_f4_vv(1, pos[0], pos[1], 0).v;
 			f4_volt(1, pos[0], pos[1], 0).v +=
-			    Op_f4_vi(1, pos[0], pos[1], 0).v * (
+			    op_f4_vi(1, pos[0], pos[1], 0).v * (
 			        f4_curr(0, pos[0],          pos[1], 0).v -
 			        temp.v -
 			        f4_curr(2, pos[0],          pos[1], 0).v +
@@ -165,9 +162,9 @@ void Engine_sse::UpdateVoltages(unsigned int startX, unsigned int numX)
 
 			// z-polarization
 			f4_volt(2, pos[0], pos[1], 0).v *=
-			    Op_f4_vv(2, pos[0], pos[1], 0).v;
+			    op_f4_vv(2, pos[0], pos[1], 0).v;
 			f4_volt(2, pos[0], pos[1], 0).v +=
-			    Op_f4_vi(2, pos[0], pos[1], 0).v * (
+			    op_f4_vi(2, pos[0], pos[1], 0).v * (
 			        f4_curr(1, pos[0],          pos[1],          0).v -
 			        f4_curr(1, pos[0]-shift[0], pos[1],          0).v -
 			        f4_curr(0, pos[0],          pos[1],          0).v +
@@ -180,6 +177,11 @@ void Engine_sse::UpdateVoltages(unsigned int startX, unsigned int numX)
 
 void Engine_sse::UpdateCurrents(unsigned int startX, unsigned int numX)
 {
+	Flat_N_3DArray<f4vector> &f4_volt = *f4_volt_ptr;
+	Flat_N_3DArray<f4vector> &f4_curr = *f4_curr_ptr;
+	Flat_N_3DArray<f4vector> &op_f4_iv = *Op->f4_iv_ptr;
+	Flat_N_3DArray<f4vector> &op_f4_ii = *Op->f4_ii_ptr;
+
 	unsigned int pos[5];
 	f4vector temp;
 
@@ -192,9 +194,9 @@ void Engine_sse::UpdateCurrents(unsigned int startX, unsigned int numX)
 			{
 				// x-pol
 				f4_curr(0, pos[0], pos[1], pos[2]).v *=
-				    Op_f4_ii(0, pos[0], pos[1], pos[2]).v;
+				    op_f4_ii(0, pos[0], pos[1], pos[2]).v;
 				f4_curr(0, pos[0], pos[1], pos[2]).v +=
-				    Op_f4_iv(0, pos[0], pos[1], pos[2]).v * (
+				    op_f4_iv(0, pos[0], pos[1], pos[2]).v * (
 				        f4_volt(2, pos[0], pos[1],   pos[2]  ).v -
 				        f4_volt(2, pos[0], pos[1]+1, pos[2]  ).v -
 				        f4_volt(1, pos[0], pos[1],   pos[2]  ).v +
@@ -203,9 +205,9 @@ void Engine_sse::UpdateCurrents(unsigned int startX, unsigned int numX)
 
 				// y-pol
 				f4_curr(1, pos[0], pos[1], pos[2]).v *=
-				    Op_f4_ii(1, pos[0], pos[1], pos[2]).v;
+				    op_f4_ii(1, pos[0], pos[1], pos[2]).v;
 				f4_curr(1, pos[0], pos[1], pos[2]).v +=
-				    Op_f4_iv(1, pos[0], pos[1], pos[2]).v * (
+				    op_f4_iv(1, pos[0], pos[1], pos[2]).v * (
 				        f4_volt(0, pos[0],   pos[1], pos[2]  ).v -
 				        f4_volt(0, pos[0],   pos[1], pos[2]+1).v -
 				        f4_volt(2, pos[0],   pos[1], pos[2]  ).v +
@@ -214,9 +216,9 @@ void Engine_sse::UpdateCurrents(unsigned int startX, unsigned int numX)
 
 				// z-pol
 				f4_curr(2, pos[0], pos[1], pos[2]).v *=
-				    Op_f4_ii(2, pos[0], pos[1], pos[2]).v;
+				    op_f4_ii(2, pos[0], pos[1], pos[2]).v;
 				f4_curr(2, pos[0], pos[1], pos[2]).v +=
-				    Op_f4_iv(2, pos[0], pos[1], pos[2]).v * (
+				    op_f4_iv(2, pos[0], pos[1], pos[2]).v * (
 				        f4_volt(1, pos[0],   pos[1],   pos[2]).v -
 				        f4_volt(1, pos[0]+1, pos[1],   pos[2]).v -
 				        f4_volt(0, pos[0],   pos[1],   pos[2]).v +
@@ -231,9 +233,9 @@ void Engine_sse::UpdateCurrents(unsigned int startX, unsigned int numX)
 			temp.f[2] = f4_volt(1, pos[0], pos[1], 0).f[3];
 			temp.f[3] = 0;
 			f4_curr(0, pos[0], pos[1], numVectors-1).v *=
-			    Op_f4_ii(0, pos[0], pos[1], numVectors-1).v;
+			    op_f4_ii(0, pos[0], pos[1], numVectors-1).v;
 			f4_curr(0, pos[0], pos[1], numVectors-1).v +=
-			    Op_f4_iv(0, pos[0], pos[1], numVectors-1).v * (
+			    op_f4_iv(0, pos[0], pos[1], numVectors-1).v * (
 			        f4_volt(2, pos[0], pos[1],   numVectors-1).v -
 			        f4_volt(2, pos[0], pos[1]+1, numVectors-1).v -
 			        f4_volt(1, pos[0], pos[1],   numVectors-1).v +
@@ -246,9 +248,9 @@ void Engine_sse::UpdateCurrents(unsigned int startX, unsigned int numX)
 			temp.f[2] = f4_volt(0, pos[0], pos[1], 0).f[3];
 			temp.f[3] = 0;
 			f4_curr(1, pos[0], pos[1], numVectors-1).v *=
-			    Op_f4_ii(1, pos[0], pos[1], numVectors-1).v;
+			    op_f4_ii(1, pos[0], pos[1], numVectors-1).v;
 			f4_curr(1, pos[0], pos[1], numVectors-1).v +=
-			    Op_f4_iv(1, pos[0], pos[1], numVectors-1).v * (
+			    op_f4_iv(1, pos[0], pos[1], numVectors-1).v * (
 			        f4_volt(0, pos[0],   pos[1], numVectors-1).v -
 			        temp.v -
 			        f4_volt(2, pos[0],   pos[1], numVectors-1).v +
@@ -257,9 +259,9 @@ void Engine_sse::UpdateCurrents(unsigned int startX, unsigned int numX)
 
 			// z-pol
 			f4_curr(2, pos[0], pos[1], numVectors-1).v *=
-			    Op_f4_ii(2, pos[0], pos[1], numVectors-1).v;
+			    op_f4_ii(2, pos[0], pos[1], numVectors-1).v;
 			f4_curr(2, pos[0], pos[1], numVectors-1).v +=
-			    Op_f4_iv(2, pos[0], pos[1], numVectors-1).v * (
+			    op_f4_iv(2, pos[0], pos[1], numVectors-1).v * (
 			        f4_volt(1, pos[0],   pos[1],   numVectors-1).v -
 			        f4_volt(1, pos[0]+1, pos[1],   numVectors-1).v -
 			        f4_volt(0, pos[0],   pos[1],   numVectors-1).v +
