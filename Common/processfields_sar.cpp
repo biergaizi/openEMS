@@ -112,14 +112,15 @@ int ProcessFieldsSAR::Process()
 	std::complex<float>**** field_fd = NULL;
 	unsigned int pos[3];
 	double T;
-	FDTD_FLOAT**** field_td=NULL;
 
 	//save dump type
 	DumpType save_dump_type = m_DumpType;
 
 	// calc E-field
+	Flat_N_3DArray<FDTD_FLOAT>* field_td_ptr = CalcField();
+	Flat_N_3DArray<FDTD_FLOAT>& field_td = *field_td_ptr;
+
 	m_DumpType = E_FIELD_DUMP;
-	field_td = CalcField();
 	T = m_Eng_Interface->GetTime(m_dualTime);
 	for (size_t n = 0; n<m_FD_Samples.size(); ++n)
 	{
@@ -133,20 +134,22 @@ int ProcessFieldsSAR::Process()
 			{
 				for (pos[2]=0; pos[2]<numLines[2]; ++pos[2])
 				{
-					field_fd[0][pos[0]][pos[1]][pos[2]] += field_td[0][pos[0]][pos[1]][pos[2]] * exp_jwt_2_dt;
-					field_fd[1][pos[0]][pos[1]][pos[2]] += field_td[1][pos[0]][pos[1]][pos[2]] * exp_jwt_2_dt;
-					field_fd[2][pos[0]][pos[1]][pos[2]] += field_td[2][pos[0]][pos[1]][pos[2]] * exp_jwt_2_dt;
+					field_fd[0][pos[0]][pos[1]][pos[2]] += field_td(0, pos[0], pos[1], pos[2]) * exp_jwt_2_dt;
+					field_fd[1][pos[0]][pos[1]][pos[2]] += field_td(1, pos[0], pos[1], pos[2]) * exp_jwt_2_dt;
+					field_fd[2][pos[0]][pos[1]][pos[2]] += field_td(2, pos[0], pos[1], pos[2]) * exp_jwt_2_dt;
 				}
 			}
 		}
 	}
-	Delete_N_3DArray<FDTD_FLOAT>(field_td,numLines);
+	Delete_Flat_N_3DArray<FDTD_FLOAT>(field_td_ptr,numLines);
 
 	// calc J-field
 	if (!m_UseCellKappa)
 	{
+		field_td_ptr = CalcField();
+		field_td = *field_td_ptr;
+
 		m_DumpType = J_FIELD_DUMP;
-		field_td = CalcField();
 		T = m_Eng_Interface->GetTime(m_dualTime);
 		for (size_t n = 0; n<m_FD_Samples.size(); ++n)
 		{
@@ -160,14 +163,14 @@ int ProcessFieldsSAR::Process()
 				{
 					for (pos[2]=0; pos[2]<numLines[2]; ++pos[2])
 					{
-						field_fd[0][pos[0]][pos[1]][pos[2]] += field_td[0][pos[0]][pos[1]][pos[2]] * exp_jwt_2_dt;
-						field_fd[1][pos[0]][pos[1]][pos[2]] += field_td[1][pos[0]][pos[1]][pos[2]] * exp_jwt_2_dt;
-						field_fd[2][pos[0]][pos[1]][pos[2]] += field_td[2][pos[0]][pos[1]][pos[2]] * exp_jwt_2_dt;
+						field_fd[0][pos[0]][pos[1]][pos[2]] += field_td(0, pos[0], pos[1], pos[2]) * exp_jwt_2_dt;
+						field_fd[1][pos[0]][pos[1]][pos[2]] += field_td(1, pos[0], pos[1], pos[2]) * exp_jwt_2_dt;
+						field_fd[2][pos[0]][pos[1]][pos[2]] += field_td(2, pos[0], pos[1], pos[2]) * exp_jwt_2_dt;
 					}
 				}
 			}
 		}
-		Delete_N_3DArray<FDTD_FLOAT>(field_td,numLines);
+		Delete_Flat_N_3DArray<FDTD_FLOAT>(field_td_ptr,numLines);
 	}
 
 	//reset dump type

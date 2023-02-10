@@ -319,6 +319,24 @@ bool HDF5_File_Writer::WriteVectorField(std::string dataSetName, double const* c
 	return success;
 }
 
+bool HDF5_File_Writer::WriteVectorField(std::string dataSetName, Flat_N_3DArray<float>& field, size_t datasize[3])
+{
+	size_t pos = 0;
+	size_t size = datasize[0]*datasize[1]*datasize[2]*3;
+	float* buffer = new float[size];
+	for (int n=0;n<3;++n)
+		for (size_t k=0;k<datasize[2];++k)
+			for (size_t j=0;j<datasize[1];++j)
+				for (size_t i=0;i<datasize[0];++i)
+				{
+					buffer[pos++]=field(n, i, j, k);
+				}
+	size_t n_size[4]={3,datasize[2],datasize[1],datasize[0]};
+	bool success = WriteData(dataSetName,buffer,4,n_size);
+	delete[] buffer;
+	return success;
+}
+
 bool HDF5_File_Writer::WriteVectorField(std::string dataSetName, std::complex<float> const* const* const* const* field, size_t datasize[3])
 {
 	size_t pos = 0;
@@ -370,6 +388,35 @@ bool HDF5_File_Writer::WriteVectorField(std::string dataSetName, std::complex<do
 				for (size_t i=0;i<datasize[0];++i)
 				{
 					buffer[pos++]=imag(field[n][i][j][k]);
+				}
+	success &= WriteData(dataSetName + "_imag",buffer,4,n_size);
+
+	delete[] buffer;
+	return success;
+}
+
+bool HDF5_File_Writer::WriteVectorField(std::string dataSetName, Flat_N_3DArray<std::complex<float>>& field, size_t datasize[3])
+{
+	size_t pos = 0;
+	size_t size = datasize[0]*datasize[1]*datasize[2]*3;
+	size_t n_size[4]={3,datasize[2],datasize[1],datasize[0]};
+	float* buffer = new float[size];
+	for (int n=0;n<3;++n)
+		for (size_t k=0;k<datasize[2];++k)
+			for (size_t j=0;j<datasize[1];++j)
+				for (size_t i=0;i<datasize[0];++i)
+				{
+					buffer[pos++]=real(field(n, i, j, k));
+				}
+	bool success = WriteData(dataSetName + "_real",buffer,4,n_size);
+
+	pos = 0;
+	for (int n=0;n<3;++n)
+		for (size_t k=0;k<datasize[2];++k)
+			for (size_t j=0;j<datasize[1];++j)
+				for (size_t i=0;i<datasize[0];++i)
+				{
+					buffer[pos++]=imag(field(n, i, j, k));
 				}
 	success &= WriteData(dataSetName + "_imag",buffer,4,n_size);
 

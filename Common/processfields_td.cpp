@@ -54,7 +54,8 @@ int ProcessFieldsTD::Process()
 
 	string filename = m_filename;
 
-	float**** field = CalcField();
+	Flat_N_3DArray<float>* field_ptr = CalcField();
+	Flat_N_3DArray<float>& field = *field_ptr;
 	bool success = true;
 
 	if (m_fileType==VTK_FILETYPE)
@@ -79,7 +80,7 @@ int ProcessFieldsTD::Process()
 		cerr << "ProcessFieldsTD::Process: unknown File-Type" << endl;
 	}
 
-	Delete_N_3DArray<FDTD_FLOAT>(field,numLines);
+	Delete_Flat_N_3DArray<FDTD_FLOAT>(field_ptr,numLines);
 
 	if (success==false)
 	{

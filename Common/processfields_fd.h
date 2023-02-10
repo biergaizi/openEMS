@@ -37,7 +37,7 @@ protected:
 	virtual void DumpFDData();
 
 	//! frequency domain field storage
-	std::vector<std::complex<float>****> m_FD_Fields;
+	std::vector<Flat_N_3DArray<std::complex<float>>*> m_FD_Fields;
 };
 
 #endif // PROCESSFIELDS_FD_H

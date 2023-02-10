@@ -24,6 +24,7 @@
 #include <string>
 #include <vector>
 #include <complex>
+#include "flat_array_ops.h"
 
 class vtkDataSet;
 
@@ -53,6 +54,7 @@ public:
 	virtual void AddScalarField(std::string fieldname, float const* const* const* field);
 	virtual void AddVectorField(std::string fieldname, double const* const* const* const* field);
 	virtual void AddVectorField(std::string fieldname, float const* const* const* const* field);
+	virtual void AddVectorField(std::string fieldname, Flat_N_3DArray<FDTD_FLOAT>& field);
 
 	virtual int GetNumberOfFields() const;
 	virtual void ClearAllFields();

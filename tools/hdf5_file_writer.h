@@ -22,6 +22,7 @@
 #include <vector>
 #include <complex>
 #include <hdf5.h>
+#include "flat_array_ops.h"
 
 class HDF5_File_Writer
 {
@@ -40,9 +41,11 @@ public:
 
 	bool WriteVectorField(std::string dataSetName, float const* const* const* const* field, size_t datasize[3]);
 	bool WriteVectorField(std::string dataSetName, double const* const* const* const* field, size_t datasize[3]);
+	bool WriteVectorField(std::string dataSetName, Flat_N_3DArray<float>& field, size_t datasize[3]);
 
 	bool WriteVectorField(std::string dataSetName, std::complex<float> const* const* const* const* field, size_t datasize[3]);
 	bool WriteVectorField(std::string dataSetName, std::complex<double> const* const* const* const* field, size_t datasize[3]);
+	bool WriteVectorField(std::string dataSetName, Flat_N_3DArray<std::complex<float>>& field, size_t datasize[3]);
 
 	bool WriteData(std::string dataSetName, float const* field_buf, size_t dim, size_t* datasize);
 	bool WriteData(std::string dataSetName, double const* field_buf, size_t dim, size_t* datasize);

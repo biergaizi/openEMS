@@ -19,7 +19,7 @@
 #define PROCESSFIELDS_H
 
 #include "processing.h"
-#include "tools/array_ops.h"
+#include "tools/flat_array_ops.h"
 
 #define __VTK_DATA_TYPE__ "double"
 
@@ -100,7 +100,7 @@ protected:
 	double* discLines[3];		//mesh disc lines to dump
 
 	//! Calculate and return the defined field. Caller has to cleanup the array.
-	FDTD_FLOAT**** CalcField();
+	Flat_N_3DArray<FDTD_FLOAT>* CalcField();
 };
 
 #endif // PROCESSFIELDS_H

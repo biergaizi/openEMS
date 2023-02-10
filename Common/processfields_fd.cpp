@@ -33,7 +33,7 @@ ProcessFieldsFD::~ProcessFieldsFD()
 {
 	for (size_t n = 0; n<m_FD_Fields.size(); ++n)
 	{
-		Delete_N_3DArray(m_FD_Fields.at(n),numLines);
+		Delete_Flat_N_3DArray(m_FD_Fields.at(n),numLines);
 	}
 	m_FD_Fields.clear();
 }
@@ -64,7 +64,7 @@ void ProcessFieldsFD::InitProcess()
 	//create data structures...
 	for (size_t n = 0; n<m_FD_Samples.size(); ++n)
 	{
-		std::complex<float>**** field_fd = Create_N_3DArray<std::complex<float> >(numLines);
+		Flat_N_3DArray<std::complex<float>>* field_fd = Create_Flat_N_3DArray<std::complex<float> >(numLines);
 		m_FD_Fields.push_back(field_fd);
 	}
 }
@@ -77,9 +77,8 @@ int ProcessFieldsFD::Process()
 	if ((m_FD_Interval==0) || (m_Eng_Interface->GetNumberOfTimesteps()%m_FD_Interval!=0))
 		return GetNextInterval();
 
-	FDTD_FLOAT**** field_td = CalcField();
-	std::complex<float>**** field_fd = NULL;
-
+	Flat_N_3DArray<FDTD_FLOAT>* field_td_ptr = CalcField();
+	Flat_N_3DArray<FDTD_FLOAT>& field_td = *field_td_ptr;
 	double T = m_Eng_Interface->GetTime(m_dualTime);
 	unsigned int pos[3];
 	for (size_t n = 0; n<m_FD_Samples.size(); ++n)
@@ -87,21 +86,22 @@ int ProcessFieldsFD::Process()
 		std::complex<float> exp_jwt_2_dt = std::exp( (std::complex<float>)(-2.0 * _I * M_PI * m_FD_Samples.at(n) * T) );
 		exp_jwt_2_dt *= 2; // *2 for single-sided spectrum
 		exp_jwt_2_dt *= Op->GetTimestep() * m_FD_Interval; // multiply with timestep-interval
-		field_fd = m_FD_Fields.at(n);
+
+		Flat_N_3DArray<std::complex<float>>& field_fd = *m_FD_Fields.at(n);
 		for (pos[0]=0; pos[0]<numLines[0]; ++pos[0])
 		{
 			for (pos[1]=0; pos[1]<numLines[1]; ++pos[1])
 			{
 				for (pos[2]=0; pos[2]<numLines[2]; ++pos[2])
 				{
-					field_fd[0][pos[0]][pos[1]][pos[2]] += field_td[0][pos[0]][pos[1]][pos[2]] * exp_jwt_2_dt;
-					field_fd[1][pos[0]][pos[1]][pos[2]] += field_td[1][pos[0]][pos[1]][pos[2]] * exp_jwt_2_dt;
-					field_fd[2][pos[0]][pos[1]][pos[2]] += field_td[2][pos[0]][pos[1]][pos[2]] * exp_jwt_2_dt;
+					field_fd(0, pos[0], pos[1], pos[2]) += field_td(0, pos[0], pos[1], pos[2]) * exp_jwt_2_dt;
+					field_fd(1, pos[0], pos[1], pos[2]) += field_td(1, pos[0], pos[1], pos[2]) * exp_jwt_2_dt;
+					field_fd(2, pos[0], pos[1], pos[2]) += field_td(2, pos[0], pos[1], pos[2]) * exp_jwt_2_dt;
 				}
 			}
 		}
 	}
-	Delete_N_3DArray<FDTD_FLOAT>(field_td,numLines);
+	Delete_Flat_N_3DArray<FDTD_FLOAT>(field_td_ptr,numLines);
 	++m_FD_SampleCount;
 	return GetNextInterval();
 }
@@ -116,28 +116,29 @@ void ProcessFieldsFD::DumpFDData()
 	if (m_fileType==VTK_FILETYPE)
 	{
 		unsigned int pos[3];
-		FDTD_FLOAT**** field = Create_N_3DArray<float>(numLines);
-		std::complex<float>**** field_fd = NULL;
+		Flat_N_3DArray<FDTD_FLOAT>* field_ptr = Create_Flat_N_3DArray<float>(numLines);
+		Flat_N_3DArray<FDTD_FLOAT>& field = *field_ptr;
 		double angle=0;
 		int Nr_Ph = 21;
 
 		for (size_t n = 0; n<m_FD_Samples.size(); ++n)
 		{
+			Flat_N_3DArray<std::complex<float>>& field_fd = *m_FD_Fields.at(n);
+
 			//dump multiple phase to vtk-files
 			for (int p=0; p<Nr_Ph; ++p)
 			{
 				angle = 2.0 * M_PI * p / Nr_Ph;
 				std::complex<float> exp_jwt = std::exp( (std::complex<float>)( _I * angle) );
-				field_fd = m_FD_Fields.at(n);
 				for (pos[0]=0; pos[0]<numLines[0]; ++pos[0])
 				{
 					for (pos[1]=0; pos[1]<numLines[1]; ++pos[1])
 					{
 						for (pos[2]=0; pos[2]<numLines[2]; ++pos[2])
 						{
-							field[0][pos[0]][pos[1]][pos[2]] = real(field_fd[0][pos[0]][pos[1]][pos[2]] * exp_jwt);
-							field[1][pos[0]][pos[1]][pos[2]] = real(field_fd[1][pos[0]][pos[1]][pos[2]] * exp_jwt);
-							field[2][pos[0]][pos[1]][pos[2]] = real(field_fd[2][pos[0]][pos[1]][pos[2]] * exp_jwt);
+							field(0, pos[0], pos[1], pos[2]) = real(field_fd(0, pos[0], pos[1], pos[2]) * exp_jwt);
+							field(1, pos[0], pos[1], pos[2]) = real(field_fd(1, pos[0], pos[1], pos[2]) * exp_jwt);
+							field(2, pos[0], pos[1], pos[2]) = real(field_fd(2, pos[0], pos[1], pos[2]) * exp_jwt);
 						}
 					}
 				}
@@ -159,9 +160,9 @@ void ProcessFieldsFD::DumpFDData()
 					{
 						for (pos[2]=0; pos[2]<numLines[2]; ++pos[2])
 						{
-							field[0][pos[0]][pos[1]][pos[2]] = abs(field_fd[0][pos[0]][pos[1]][pos[2]]);
-							field[1][pos[0]][pos[1]][pos[2]] = abs(field_fd[1][pos[0]][pos[1]][pos[2]]);
-							field[2][pos[0]][pos[1]][pos[2]] = abs(field_fd[2][pos[0]][pos[1]][pos[2]]);
+							field(0, pos[0], pos[1], pos[2]) = abs(field_fd(0, pos[0], pos[1], pos[2]));
+							field(1, pos[0], pos[1], pos[2]) = abs(field_fd(1, pos[0], pos[1], pos[2]));
+							field(2, pos[0], pos[1], pos[2]) = abs(field_fd(2, pos[0], pos[1], pos[2]));
 						}
 					}
 				}
@@ -182,9 +183,9 @@ void ProcessFieldsFD::DumpFDData()
 					{
 						for (pos[2]=0; pos[2]<numLines[2]; ++pos[2])
 						{
-							field[0][pos[0]][pos[1]][pos[2]] = arg(field_fd[0][pos[0]][pos[1]][pos[2]]);
-							field[1][pos[0]][pos[1]][pos[2]] = arg(field_fd[1][pos[0]][pos[1]][pos[2]]);
-							field[2][pos[0]][pos[1]][pos[2]] = arg(field_fd[2][pos[0]][pos[1]][pos[2]]);
+							field(0, pos[0], pos[1], pos[2]) = arg(field_fd(0, pos[0], pos[1], pos[2]));
+							field(1, pos[0], pos[1], pos[2]) = arg(field_fd(1, pos[0], pos[1], pos[2]));
+							field(2, pos[0], pos[1], pos[2]) = arg(field_fd(2, pos[0], pos[1], pos[2]));
 						}
 					}
 				}
@@ -197,7 +198,7 @@ void ProcessFieldsFD::DumpFDData()
 					cerr << "ProcessFieldsFD::Process: can't dump to file... abort! " << endl;
 			}
 		}
-		Delete_N_3DArray(field,numLines);
+		Delete_Flat_N_3DArray(field_ptr,numLines);
 		return;
 	}
 
@@ -208,7 +209,7 @@ void ProcessFieldsFD::DumpFDData()
 			stringstream ss;
 			ss << "f" << n;
 			size_t datasize[]={numLines[0],numLines[1],numLines[2]};
-			if (m_HDF5_Dump_File->WriteVectorField(ss.str(), m_FD_Fields.at(n), datasize)==false)
+			if (m_HDF5_Dump_File->WriteVectorField(ss.str(), *m_FD_Fields.at(n), datasize)==false)
 				cerr << "ProcessFieldsFD::Process: can't dump to file...! " << endl;
 
 			//legacy support, use /FieldData/FD frequency-Attribute in the future
