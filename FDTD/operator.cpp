@@ -22,7 +22,6 @@
 #include "extensions/operator_extension.h"
 #include "extensions/operator_ext_excitation.h"
 #include "Common/processfields.h"
-#include "tools/array_ops.h"
 #include "tools/vtk_file_writer.h"
 #include "fparser.hh"
 #include "extensions/operator_ext_excitation.h"
@@ -80,7 +79,7 @@ void Operator::Init()
 	ii=NULL;
 
 	m_epsR=NULL;
-	m_kappa=NULL;
+	m_kappa_ptr=NULL;
 	m_mueR=NULL;
 	m_sigma=NULL;
 
@@ -119,8 +118,8 @@ void Operator::Delete()
 
 	Delete_N_3DArray(m_epsR,numLines);
 	m_epsR=0;
-	Delete_N_3DArray(m_kappa,numLines);
-	m_kappa=0;
+	Delete_Flat_N_3DArray(m_kappa_ptr,numLines);
+	m_kappa_ptr=0;
 	Delete_N_3DArray(m_mueR,numLines);
 	m_mueR=0;
 	Delete_N_3DArray(m_sigma,numLines);
@@ -861,8 +860,8 @@ void Operator::InitDataStorage()
 	{
 		if (g_settings.GetVerboseLevel()>0)
 			cerr << "Operator::InitDataStorage(): Storing kappa material data..." << endl;
-		Delete_N_3DArray(m_kappa,numLines);
-		m_kappa = Create_N_3DArray<float>(numLines);
+		Delete_Flat_N_3DArray(m_kappa_ptr,numLines);
+		m_kappa_ptr = Create_Flat_N_3DArray<float>(numLines);
 	}
 	if (m_StoreMaterial[2])
 	{
@@ -889,12 +888,12 @@ void Operator::CleanupMaterialStorage()
 		Delete_N_3DArray(m_epsR,numLines);
 		m_epsR = NULL;
 	}
-	if (!m_StoreMaterial[1] && m_kappa)
+	if (!m_StoreMaterial[1] && m_kappa_ptr)
 	{
 		if (g_settings.GetVerboseLevel()>0)
 			cerr << "Operator::CleanupMaterialStorage(): Delete kappa material data..." << endl;
-		Delete_N_3DArray(m_kappa,numLines);
-		m_kappa = NULL;
+		Delete_Flat_N_3DArray(m_kappa_ptr,numLines);
+		m_kappa_ptr = NULL;
 	}
 	if (!m_StoreMaterial[2] && m_mueR)
 	{
@@ -914,6 +913,8 @@ void Operator::CleanupMaterialStorage()
 
 double Operator::GetDiscMaterial(int type, int n, const unsigned int pos[3]) const
 {
+	Flat_N_3DArray<float>& m_kappa = *m_kappa_ptr;
+
 	switch (type)
 	{
 	case 0:
@@ -921,9 +922,9 @@ double Operator::GetDiscMaterial(int type, int n, const unsigned int pos[3]) con
 			return 0;
 		return m_epsR[n][pos[0]][pos[1]][pos[2]];
 	case 1:
-		if (m_kappa==0)
+		if (m_kappa_ptr==0)
 			return 0;
-		return m_kappa[n][pos[0]][pos[1]][pos[2]];
+		return m_kappa(n, pos[0], pos[1], pos[2]);
 	case 2:
 		if (m_mueR==0)
 			return 0;
@@ -1181,8 +1182,10 @@ bool Operator::Calc_ECPos(int ny, const unsigned int* pos, double* EC, vector<CS
 
 	if (m_epsR)
 		m_epsR[ny][pos[0]][pos[1]][pos[2]] =  EffMat[0];
-	if (m_kappa)
-		m_kappa[ny][pos[0]][pos[1]][pos[2]] =  EffMat[1];
+	if (m_kappa_ptr) {
+		Flat_N_3DArray<float> m_kappa = *m_kappa_ptr;
+		m_kappa(ny, pos[0], pos[1], pos[2]) =  EffMat[1];
+	}
 	if (m_mueR)
 		m_mueR[ny][pos[0]][pos[1]][pos[2]] =  EffMat[2];
 	if (m_sigma)

@@ -226,8 +226,10 @@ void Operator_CylinderMultiGrid::FillMissingDataStorage()
 
 					if (m_epsR)
 						m_epsR[ny][pos[0]][pos[1]][pos[2]] =  EffMat[0];
-					if (m_kappa)
-						m_kappa[ny][pos[0]][pos[1]][pos[2]] =  EffMat[1];
+					if (m_kappa_ptr) {
+						Flat_N_3DArray<float>& m_kappa = *m_kappa_ptr;
+						m_kappa(ny, pos[0], pos[1], pos[2]) =  EffMat[1];
+					}
 					if (m_mueR)
 						m_mueR[ny][pos[0]][pos[1]][pos[2]] =  EffMat[2];
 					if (m_sigma)

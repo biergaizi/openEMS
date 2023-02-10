@@ -20,6 +20,7 @@
 
 #include "tools/AdrOp.h"
 #include "tools/constants.h"
+#include "tools/flat_array_ops.h"
 #include "excitation.h"
 #include "Common/operator_base.h"
 
@@ -249,7 +250,7 @@ protected:
 
 	//store material properties for post-processing
 	float**** m_epsR;
-	float**** m_kappa;
+	Flat_N_3DArray<float>* m_kappa_ptr;
 	float**** m_mueR;
 	float**** m_sigma;
 

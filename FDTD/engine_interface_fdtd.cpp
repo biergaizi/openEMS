@@ -260,8 +260,10 @@ double Engine_Interface_FDTD::GetRawField(unsigned int n, const unsigned int* po
 	double delta = m_Op->GetEdgeLength(n,pos);
 	if ((type==0) && (delta))
 		return value/delta;
-	if ((type==1) && (m_Op->m_kappa) && (delta))
-		return value*m_Op->m_kappa[n][pos[0]][pos[1]][pos[2]]/delta;
+	if ((type==1) && (m_Op->m_kappa_ptr) && (delta)) {
+		Flat_N_3DArray<float>& kappa = *m_Op->m_kappa_ptr;
+		return value*kappa(n, pos[0], pos[1], pos[2])/delta;
+	}
 	if ((type==3) && (m_Op->m_epsR) && (delta))
 		return value*m_Op->m_epsR[n][pos[0]][pos[1]][pos[2]]/delta;
 	if (type==2) //calc rot(H)
