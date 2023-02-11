@@ -80,7 +80,7 @@ void Operator::Init()
 
 	m_epsR=NULL;
 	m_kappa_ptr=NULL;
-	m_mueR=NULL;
+	m_mueR_ptr=NULL;
 	m_sigma=NULL;
 
 	MainOp=NULL;
@@ -120,8 +120,8 @@ void Operator::Delete()
 	m_epsR=0;
 	Delete_Flat_N_3DArray(m_kappa_ptr,numLines);
 	m_kappa_ptr=0;
-	Delete_N_3DArray(m_mueR,numLines);
-	m_mueR=0;
+	Delete_Flat_N_3DArray(m_mueR_ptr,numLines);
+	m_mueR_ptr=0;
 	Delete_N_3DArray(m_sigma,numLines);
 	m_sigma=0;
 }
@@ -867,8 +867,8 @@ void Operator::InitDataStorage()
 	{
 		if (g_settings.GetVerboseLevel()>0)
 			cerr << "Operator::InitDataStorage(): Storing muR material data..." << endl;
-		Delete_N_3DArray(m_mueR,numLines);
-		m_mueR = Create_N_3DArray<float>(numLines);
+		Delete_Flat_N_3DArray(m_mueR_ptr,numLines);
+		m_mueR_ptr = Create_Flat_N_3DArray<float>(numLines);
 	}
 	if (m_StoreMaterial[3])
 	{
@@ -895,12 +895,12 @@ void Operator::CleanupMaterialStorage()
 		Delete_Flat_N_3DArray(m_kappa_ptr,numLines);
 		m_kappa_ptr = NULL;
 	}
-	if (!m_StoreMaterial[2] && m_mueR)
+	if (!m_StoreMaterial[2] && m_mueR_ptr)
 	{
 		if (g_settings.GetVerboseLevel()>0)
 			cerr << "Operator::CleanupMaterialStorage(): Delete mueR material data..." << endl;
-		Delete_N_3DArray(m_mueR,numLines);
-		m_mueR = NULL;
+		Delete_Flat_N_3DArray(m_mueR_ptr,numLines);
+		m_mueR_ptr = NULL;
 	}
 	if (!m_StoreMaterial[3] && m_sigma)
 	{
@@ -914,6 +914,7 @@ void Operator::CleanupMaterialStorage()
 double Operator::GetDiscMaterial(int type, int n, const unsigned int pos[3]) const
 {
 	Flat_N_3DArray<float>& m_kappa = *m_kappa_ptr;
+	Flat_N_3DArray<float>& m_mueR = *m_mueR_ptr;
 
 	switch (type)
 	{
@@ -926,9 +927,9 @@ double Operator::GetDiscMaterial(int type, int n, const unsigned int pos[3]) con
 			return 0;
 		return m_kappa(n, pos[0], pos[1], pos[2]);
 	case 2:
-		if (m_mueR==0)
+		if (m_mueR_ptr==0)
 			return 0;
-		return m_mueR[n][pos[0]][pos[1]][pos[2]];
+		return m_mueR(n, pos[0], pos[1], pos[2]);
 	case 3:
 		if (m_sigma==0)
 			return 0;
@@ -1186,8 +1187,10 @@ bool Operator::Calc_ECPos(int ny, const unsigned int* pos, double* EC, vector<CS
 		Flat_N_3DArray<float> m_kappa = *m_kappa_ptr;
 		m_kappa(ny, pos[0], pos[1], pos[2]) =  EffMat[1];
 	}
-	if (m_mueR)
-		m_mueR[ny][pos[0]][pos[1]][pos[2]] =  EffMat[2];
+	if (m_mueR_ptr) {
+		Flat_N_3DArray<float> m_mueR = *m_mueR_ptr;
+		m_mueR(ny, pos[0], pos[1], pos[2]) =  EffMat[2];
+	}
 	if (m_sigma)
 		m_sigma[ny][pos[0]][pos[1]][pos[2]] =  EffMat[3];
 

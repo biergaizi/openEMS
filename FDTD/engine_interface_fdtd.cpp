@@ -136,8 +136,10 @@ double Engine_Interface_FDTD::GetRawDualField(unsigned int n, const unsigned int
 	double delta = m_Op->GetEdgeLength(n,pos,true);
 	if ((type==0) && (delta))
 		return value/delta;
-	if ((type==1) && (m_Op->m_mueR) && (delta))
-		return value*m_Op->m_mueR[n][pos[0]][pos[1]][pos[2]]/delta;
+	if ((type==1) && (m_Op->m_mueR_ptr) && (delta)) {
+		Flat_N_3DArray<float>& m_mueR = *m_Op->m_mueR_ptr;
+		return value*m_mueR(n, pos[0], pos[1], pos[2])/delta;
+	}
 	return 0.0;
 }
 

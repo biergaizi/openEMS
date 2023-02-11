@@ -251,7 +251,7 @@ protected:
 	//store material properties for post-processing
 	float**** m_epsR;
 	Flat_N_3DArray<float>* m_kappa_ptr;
-	float**** m_mueR;
+	Flat_N_3DArray<float>* m_mueR_ptr;
 	float**** m_sigma;
 
 	//EC elements, internal only!
