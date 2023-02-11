@@ -61,8 +61,8 @@ protected:
 
 	unsigned int m_numLines[2];
 
-	FDTD_FLOAT** m_Mur_Coeff_nyP;
-	FDTD_FLOAT** m_Mur_Coeff_nyPP;
+	Flat2DArray<FDTD_FLOAT>* m_Mur_Coeff_nyP_ptr;
+	Flat2DArray<FDTD_FLOAT>* m_Mur_Coeff_nyPP_ptr;
 };
 
 #endif // OPERATOR_EXT_MUR_ABC_H

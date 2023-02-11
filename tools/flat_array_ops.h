@@ -5,6 +5,75 @@
 #include "array_ops.h"
 #include <ostream>
 
+//***************************
+// Flat2DArray
+//***************************
+
+template <typename T>
+struct Flat2DArray
+{
+	inline T& operator() (const unsigned int x, const unsigned int y)
+	{
+		return array[x * x_stride + y];
+	}
+
+	inline T operator() (const unsigned int &x, const unsigned int &y) const
+	{
+		return array[x * x_stride + y];
+	}
+
+	unsigned long x_stride, pad;
+
+	// This is a flexible array member, the actual size would be
+	// determined by the actual size used to call malloc (actually
+	// posix_memalign() if the type is a SIMD f4vector).
+	//
+	// It's technically a standard-nonconforming undefined behavior,
+	// but is a well-known technique and it's important here to
+	// avoid the cost of extra dereferencing.
+	T array[1];
+};
+
+template <typename T>
+Flat2DArray<T>* CreateFlat2DArray(const unsigned int* numLines)
+{
+	unsigned int x_max = numLines[0];
+	unsigned int y_max = numLines[1];
+
+	// size of the Flat_2DArray class itself.
+	size_t size = sizeof(Flat2DArray<T>);
+
+	// and the actual memory of the array[1] flexible array member
+	size += sizeof(T) * x_max * y_max;
+
+	// array[0] is counted twice, so remove one element.
+	size -= sizeof(T);
+
+	void *buf;
+	if (MEMALIGN(&buf, 16, size))
+	{
+		std::cerr << "cannot allocate aligned memory" << std::endl;
+		exit(3);
+	}
+	memset(buf, 0, size);
+
+	// create Flat_2DArray inside manually allocated memory "buf".
+	Flat2DArray<T>* array = new (buf) Flat2DArray<T>;
+	array->x_stride = y_max;
+
+	return array;
+}
+
+template <typename T>
+void DeleteFlat2DArray(Flat2DArray<T>* array, const unsigned int* numLines)
+{
+	free(array);
+}
+
+//***************************
+// Flat_N_3DArray
+//***************************
+
 template <typename T>
 struct Flat_N_3DArray
 {

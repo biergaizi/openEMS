@@ -34,11 +34,11 @@ Engine_Ext_Mur_ABC::Engine_Ext_Mur_ABC(Operator_Ext_Mur_ABC* op_ext) : Engine_Ex
 	m_LineNr = m_Op_mur->m_LineNr;
 	m_LineNr_Shift = m_Op_mur->m_LineNr_Shift;
 
-	m_Mur_Coeff_nyP = m_Op_mur->m_Mur_Coeff_nyP;
-	m_Mur_Coeff_nyPP = m_Op_mur->m_Mur_Coeff_nyPP;
+	m_Mur_Coeff_nyP_ptr = m_Op_mur->m_Mur_Coeff_nyP_ptr;
+	m_Mur_Coeff_nyPP_ptr = m_Op_mur->m_Mur_Coeff_nyPP_ptr;
 
-	m_volt_nyP = Create2DArray<FDTD_FLOAT>(m_numLines);
-	m_volt_nyPP = Create2DArray<FDTD_FLOAT>(m_numLines);
+	m_volt_nyP_ptr = CreateFlat2DArray<FDTD_FLOAT>(m_numLines);
+	m_volt_nyPP_ptr = CreateFlat2DArray<FDTD_FLOAT>(m_numLines);
 
 	//find if some excitation is on this mur-abc and find the max length of this excite, so that the abc can start after the excitation is done...
 	int maxDelay=-1;
@@ -63,10 +63,10 @@ Engine_Ext_Mur_ABC::Engine_Ext_Mur_ABC(Operator_Ext_Mur_ABC* op_ext) : Engine_Ex
 
 Engine_Ext_Mur_ABC::~Engine_Ext_Mur_ABC()
 {
-	Delete2DArray(m_volt_nyP,m_numLines);
-	m_volt_nyP = NULL;
-	Delete2DArray(m_volt_nyPP,m_numLines);
-	m_volt_nyPP = NULL;
+	DeleteFlat2DArray(m_volt_nyP_ptr,m_numLines);
+	m_volt_nyP_ptr = NULL;
+	DeleteFlat2DArray(m_volt_nyPP_ptr,m_numLines);
+	m_volt_nyPP_ptr = NULL;
 }
 
 
@@ -93,6 +93,11 @@ void Engine_Ext_Mur_ABC::DoPreVoltageUpdates(int threadID)
 	pos[m_ny] = m_LineNr;
 	pos_shift[m_ny] = m_LineNr_Shift;
 
+	Flat2DArray<FDTD_FLOAT>& m_volt_nyP = *m_volt_nyP_ptr;
+	Flat2DArray<FDTD_FLOAT>& m_volt_nyPP = *m_volt_nyPP_ptr;
+	Flat2DArray<FDTD_FLOAT>& m_Mur_Coeff_nyP = *m_Mur_Coeff_nyP_ptr;
+	Flat2DArray<FDTD_FLOAT>& m_Mur_Coeff_nyPP = *m_Mur_Coeff_nyPP_ptr;
+
 	//switch for different engine types to access faster inline engine functions
 	switch (m_Eng->GetType())
 	{
@@ -105,8 +110,8 @@ void Engine_Ext_Mur_ABC::DoPreVoltageUpdates(int threadID)
 				for (pos[m_nyPP]=0; pos[m_nyPP]<m_numLines[1]; ++pos[m_nyPP])
 				{
 					pos_shift[m_nyPP] = pos[m_nyPP];
-					m_volt_nyP[pos[m_nyP]][pos[m_nyPP]] = m_Eng->Engine::GetVolt(m_nyP,pos_shift) - m_Op_mur->m_Mur_Coeff_nyP[pos[m_nyP]][pos[m_nyPP]] * m_Eng->Engine::GetVolt(m_nyP,pos);
-					m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]] = m_Eng->Engine::GetVolt(m_nyPP,pos_shift) - m_Op_mur->m_Mur_Coeff_nyPP[pos[m_nyP]][pos[m_nyPP]] * m_Eng->Engine::GetVolt(m_nyPP,pos);
+					m_volt_nyP(pos[m_nyP], pos[m_nyPP]) = m_Eng->Engine::GetVolt(m_nyP,pos_shift) - m_Mur_Coeff_nyP(pos[m_nyP], pos[m_nyPP]) * m_Eng->Engine::GetVolt(m_nyP,pos);
+					m_volt_nyPP(pos[m_nyP], pos[m_nyPP]) = m_Eng->Engine::GetVolt(m_nyPP,pos_shift) - m_Mur_Coeff_nyPP(pos[m_nyP], pos[m_nyPP]) * m_Eng->Engine::GetVolt(m_nyPP,pos);
 				}
 			}
 			break;
@@ -121,8 +126,8 @@ void Engine_Ext_Mur_ABC::DoPreVoltageUpdates(int threadID)
 				for (pos[m_nyPP]=0; pos[m_nyPP]<m_numLines[1]; ++pos[m_nyPP])
 				{
 					pos_shift[m_nyPP] = pos[m_nyPP];
-					m_volt_nyP[pos[m_nyP]][pos[m_nyPP]] = eng_sse->Engine_sse::GetVolt(m_nyP,pos_shift) - m_Op_mur->m_Mur_Coeff_nyP[pos[m_nyP]][pos[m_nyPP]] * eng_sse->Engine_sse::GetVolt(m_nyP,pos);
-					m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]] = eng_sse->Engine_sse::GetVolt(m_nyPP,pos_shift) - m_Op_mur->m_Mur_Coeff_nyPP[pos[m_nyP]][pos[m_nyPP]] * eng_sse->Engine_sse::GetVolt(m_nyPP,pos);
+					m_volt_nyP(pos[m_nyP], pos[m_nyPP]) = eng_sse->Engine_sse::GetVolt(m_nyP,pos_shift) - m_Mur_Coeff_nyP(pos[m_nyP], pos[m_nyPP]) * eng_sse->Engine_sse::GetVolt(m_nyP,pos);
+					m_volt_nyPP(pos[m_nyP], pos[m_nyPP]) = eng_sse->Engine_sse::GetVolt(m_nyPP,pos_shift) - m_Mur_Coeff_nyPP(pos[m_nyP], pos[m_nyPP]) * eng_sse->Engine_sse::GetVolt(m_nyPP,pos);
 				}
 			}
 			break;
@@ -135,8 +140,8 @@ void Engine_Ext_Mur_ABC::DoPreVoltageUpdates(int threadID)
 			for (pos[m_nyPP]=0; pos[m_nyPP]<m_numLines[1]; ++pos[m_nyPP])
 			{
 				pos_shift[m_nyPP] = pos[m_nyPP];
-				m_volt_nyP[pos[m_nyP]][pos[m_nyPP]] = m_Eng->GetVolt(m_nyP,pos_shift) - m_Op_mur->m_Mur_Coeff_nyP[pos[m_nyP]][pos[m_nyPP]] * m_Eng->GetVolt(m_nyP,pos);
-				m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]] = m_Eng->GetVolt(m_nyPP,pos_shift) - m_Op_mur->m_Mur_Coeff_nyPP[pos[m_nyP]][pos[m_nyPP]] * m_Eng->GetVolt(m_nyPP,pos);
+				m_volt_nyP(pos[m_nyP], pos[m_nyPP]) = m_Eng->GetVolt(m_nyP,pos_shift) - m_Mur_Coeff_nyP(pos[m_nyP], pos[m_nyPP]) * m_Eng->GetVolt(m_nyP,pos);
+				m_volt_nyPP(pos[m_nyP], pos[m_nyPP]) = m_Eng->GetVolt(m_nyPP,pos_shift) - m_Mur_Coeff_nyPP(pos[m_nyP], pos[m_nyPP]) * m_Eng->GetVolt(m_nyPP,pos);
 			}
 		}
 		break;
@@ -154,6 +159,11 @@ void Engine_Ext_Mur_ABC::DoPostVoltageUpdates(int threadID)
 	pos[m_ny] = m_LineNr;
 	pos_shift[m_ny] = m_LineNr_Shift;
 
+	Flat2DArray<FDTD_FLOAT>& m_volt_nyP = *m_volt_nyP_ptr;
+	Flat2DArray<FDTD_FLOAT>& m_volt_nyPP = *m_volt_nyPP_ptr;
+	Flat2DArray<FDTD_FLOAT>& m_Mur_Coeff_nyP = *m_Mur_Coeff_nyP_ptr;
+	Flat2DArray<FDTD_FLOAT>& m_Mur_Coeff_nyPP = *m_Mur_Coeff_nyPP_ptr;
+
 	//switch for different engine types to access faster inline engine functions
 	switch (m_Eng->GetType())
 	{
@@ -166,8 +176,8 @@ void Engine_Ext_Mur_ABC::DoPostVoltageUpdates(int threadID)
 				for (pos[m_nyPP]=0; pos[m_nyPP]<m_numLines[1]; ++pos[m_nyPP])
 				{
 					pos_shift[m_nyPP] = pos[m_nyPP];
-					m_volt_nyP[pos[m_nyP]][pos[m_nyPP]] += m_Op_mur->m_Mur_Coeff_nyP[pos[m_nyP]][pos[m_nyPP]] * m_Eng->Engine::GetVolt(m_nyP,pos_shift);
-					m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]] += m_Op_mur->m_Mur_Coeff_nyPP[pos[m_nyP]][pos[m_nyPP]] * m_Eng->Engine::GetVolt(m_nyPP,pos_shift);
+					m_volt_nyP(pos[m_nyP], pos[m_nyPP]) += m_Mur_Coeff_nyP(pos[m_nyP], pos[m_nyPP]) * m_Eng->Engine::GetVolt(m_nyP,pos_shift);
+					m_volt_nyPP(pos[m_nyP], pos[m_nyPP]) += m_Mur_Coeff_nyPP(pos[m_nyP], pos[m_nyPP]) * m_Eng->Engine::GetVolt(m_nyPP,pos_shift);
 				}
 			}
 			break;
@@ -183,8 +193,8 @@ void Engine_Ext_Mur_ABC::DoPostVoltageUpdates(int threadID)
 				for (pos[m_nyPP]=0; pos[m_nyPP]<m_numLines[1]; ++pos[m_nyPP])
 				{
 					pos_shift[m_nyPP] = pos[m_nyPP];
-					m_volt_nyP[pos[m_nyP]][pos[m_nyPP]] += m_Op_mur->m_Mur_Coeff_nyP[pos[m_nyP]][pos[m_nyPP]] * eng_sse->Engine_sse::GetVolt(m_nyP,pos_shift);
-					m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]] += m_Op_mur->m_Mur_Coeff_nyPP[pos[m_nyP]][pos[m_nyPP]] * eng_sse->Engine_sse::GetVolt(m_nyPP,pos_shift);
+					m_volt_nyP(pos[m_nyP], pos[m_nyPP]) += m_Mur_Coeff_nyP(pos[m_nyP], pos[m_nyPP]) * eng_sse->Engine_sse::GetVolt(m_nyP,pos_shift);
+					m_volt_nyPP(pos[m_nyP], pos[m_nyPP]) += m_Mur_Coeff_nyPP(pos[m_nyP], pos[m_nyPP]) * eng_sse->Engine_sse::GetVolt(m_nyPP,pos_shift);
 				}
 			}
 			break;
@@ -198,8 +208,8 @@ void Engine_Ext_Mur_ABC::DoPostVoltageUpdates(int threadID)
 			for (pos[m_nyPP]=0; pos[m_nyPP]<m_numLines[1]; ++pos[m_nyPP])
 			{
 				pos_shift[m_nyPP] = pos[m_nyPP];
-				m_volt_nyP[pos[m_nyP]][pos[m_nyPP]] += m_Op_mur->m_Mur_Coeff_nyP[pos[m_nyP]][pos[m_nyPP]] * m_Eng->GetVolt(m_nyP,pos_shift);
-				m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]] += m_Op_mur->m_Mur_Coeff_nyPP[pos[m_nyP]][pos[m_nyPP]] * m_Eng->GetVolt(m_nyPP,pos_shift);
+				m_volt_nyP(pos[m_nyP], pos[m_nyPP]) += m_Mur_Coeff_nyP(pos[m_nyP], pos[m_nyPP]) * m_Eng->GetVolt(m_nyP,pos_shift);
+				m_volt_nyPP(pos[m_nyP], pos[m_nyPP]) += m_Mur_Coeff_nyPP(pos[m_nyP], pos[m_nyPP]) * m_Eng->GetVolt(m_nyPP,pos_shift);
 			}
 		}
 		break;
@@ -215,6 +225,9 @@ void Engine_Ext_Mur_ABC::Apply2Voltages(int threadID)
 	unsigned int pos[] = {0,0,0};
 	pos[m_ny] = m_LineNr;
 
+	Flat2DArray<FDTD_FLOAT>& m_volt_nyP = *m_volt_nyP_ptr;
+	Flat2DArray<FDTD_FLOAT>& m_volt_nyPP = *m_volt_nyPP_ptr;
+
 	//switch for different engine types to access faster inline engine functions
 	switch (m_Eng->GetType())
 	{
@@ -225,8 +238,8 @@ void Engine_Ext_Mur_ABC::Apply2Voltages(int threadID)
 				pos[m_nyP]=lineX+m_start.at(threadID);
 				for (pos[m_nyPP]=0; pos[m_nyPP]<m_numLines[1]; ++pos[m_nyPP])
 				{
-					m_Eng->Engine::SetVolt(m_nyP,pos, m_volt_nyP[pos[m_nyP]][pos[m_nyPP]]);
-					m_Eng->Engine::SetVolt(m_nyPP,pos, m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]]);
+					m_Eng->Engine::SetVolt(m_nyP,pos, m_volt_nyP(pos[m_nyP], pos[m_nyPP]));
+					m_Eng->Engine::SetVolt(m_nyPP,pos, m_volt_nyPP(pos[m_nyP], pos[m_nyPP]));
 				}
 			}
 			break;
@@ -240,8 +253,8 @@ void Engine_Ext_Mur_ABC::Apply2Voltages(int threadID)
 				pos[m_nyP]=lineX+m_start.at(threadID);
 				for (pos[m_nyPP]=0; pos[m_nyPP]<m_numLines[1]; ++pos[m_nyPP])
 				{
-					eng_sse->Engine_sse::SetVolt(m_nyP,pos, m_volt_nyP[pos[m_nyP]][pos[m_nyPP]]);
-					eng_sse->Engine_sse::SetVolt(m_nyPP,pos, m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]]);
+					eng_sse->Engine_sse::SetVolt(m_nyP,pos, m_volt_nyP(pos[m_nyP], pos[m_nyPP]));
+					eng_sse->Engine_sse::SetVolt(m_nyPP,pos, m_volt_nyPP(pos[m_nyP], pos[m_nyPP]));
 				}
 			}
 			break;
@@ -253,8 +266,8 @@ void Engine_Ext_Mur_ABC::Apply2Voltages(int threadID)
 			pos[m_nyP]=lineX+m_start.at(threadID);
 			for (pos[m_nyPP]=0; pos[m_nyPP]<m_numLines[1]; ++pos[m_nyPP])
 			{
-				m_Eng->SetVolt(m_nyP,pos, m_volt_nyP[pos[m_nyP]][pos[m_nyPP]]);
-				m_Eng->SetVolt(m_nyPP,pos, m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]]);
+				m_Eng->SetVolt(m_nyP,pos, m_volt_nyP(pos[m_nyP], pos[m_nyPP]));
+				m_Eng->SetVolt(m_nyPP,pos, m_volt_nyPP(pos[m_nyP], pos[m_nyPP]));
 			}
 		}
 		break;

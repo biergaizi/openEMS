@@ -54,10 +54,10 @@ protected:
 	vector<unsigned int> m_start;
 	vector<unsigned int> m_numX;
 
-	FDTD_FLOAT** m_Mur_Coeff_nyP;
-	FDTD_FLOAT** m_Mur_Coeff_nyPP;
-	FDTD_FLOAT** m_volt_nyP; //n+1 direction
-	FDTD_FLOAT** m_volt_nyPP; //n+2 direction
+	Flat2DArray<FDTD_FLOAT>* m_Mur_Coeff_nyP_ptr;
+	Flat2DArray<FDTD_FLOAT>* m_Mur_Coeff_nyPP_ptr;
+	Flat2DArray<FDTD_FLOAT>* m_volt_nyP_ptr; //n+1 direction
+	Flat2DArray<FDTD_FLOAT>* m_volt_nyPP_ptr; //n+2 direction
 };
 
 #endif // ENGINE_EXT_MUR_ABC_H
