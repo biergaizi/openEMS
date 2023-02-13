@@ -184,6 +184,26 @@ int LinePlaneIntersection(const double *p0, const double *p1, const double *p2, 
 	return 0;
 }
 
+#ifdef __SSE__
+#include <xmmintrin.h>
+#endif
+void DisableDenormals(void)
+{
+	// speed up the calculation of denormal floating point values (flush-to-zero)
+#if defined(__SSE__)
+	unsigned int oldMXCSR = _mm_getcsr(); //read the old MXCSR setting
+	unsigned int newMXCSR = oldMXCSR | 0x8040; // set DAZ and FZ bits
+	_mm_setcsr( newMXCSR ); //write the new MXCSR setting to the MXCSR
+#elif defined(__aarch64__)
+	unsigned int oldFPCR;
+	unsigned int newFPCR;
+
+	asm volatile("mrs %x[result], FPCR" : [result] "=r"(oldFPCR));
+	newFPCR = oldFPCR | (1 << 24);
+	asm volatile("msr FPCR, %x[src]" : : [src] "r"(newFPCR));
+#endif
+}
+
 #ifndef __GNUC__
 #include <chrono>
 #include <Winsock2.h> // for struct timeval

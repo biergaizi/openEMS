@@ -33,10 +33,6 @@
 #include "boost/date_time/gregorian/gregorian.hpp"
 #include <iomanip>
 
-#ifndef SSE_CORRECT_DENORMALS
-#include <xmmintrin.h>
-#endif
-
 //! \brief construct an Engine_Multithread instance
 //! it's the responsibility of the caller to free the returned pointer
 Engine_Multithread* Engine_Multithread::New(const Operator_Multithread* op, unsigned int numThreads)
@@ -321,9 +317,7 @@ void thread::operator()()
 
 	// speed up the calculation of denormal floating point values (flush-to-zero)
 #ifndef SSE_CORRECT_DENORMALS
-	unsigned int oldMXCSR = _mm_getcsr(); //read the old MXCSR setting
-	unsigned int newMXCSR = oldMXCSR | 0x8040; // set DAZ and FZ bits
-	_mm_setcsr( newMXCSR ); //write the new MXCSR setting to the MXCSR
+	DisableDenormals();
 #endif
 
 	while (!m_enginePtr->m_stopThreads)

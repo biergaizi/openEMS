@@ -15,11 +15,8 @@
 *	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef SSE_CORRECT_DENORMALS
-#include <xmmintrin.h>
-#endif
-
 #include "engine_sse.h"
+#include "tools/useful.h"
 
 //! \brief construct an Engine_sse instance
 //! it's the responsibility of the caller to free the returned pointer
@@ -41,9 +38,7 @@ Engine_sse::Engine_sse(const Operator_sse* op) : Engine(op)
 
 	// speed up the calculation of denormal floating point values (flush-to-zero)
 #ifndef SSE_CORRECT_DENORMALS
-	unsigned int oldMXCSR = _mm_getcsr(); //read the old MXCSR setting
-	unsigned int newMXCSR = oldMXCSR | 0x8040; // set DAZ and FZ bits
-	_mm_setcsr( newMXCSR ); //write the new MXCSR setting to the MXCSR
+	DisableDenormals();
 #endif
 }
 

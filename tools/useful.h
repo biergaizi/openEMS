@@ -41,6 +41,8 @@ double* Invert(const double* in, double* out);
 
 int LinePlaneIntersection(const double *p0, const double* p1, const double* p2, const double* l_start, const double* l_stop, double* is_point, double &dist);
 
+void DisableDenormals(void);
+
 #ifndef __GNUC__
 int gettimeofday(struct timeval* tp, struct timezone* tzp);
 #endif // _WIN32
