@@ -62,6 +62,34 @@ void Engine_Ext_UPML::DoPreVoltageUpdates(int threadID)
 	if (threadID>=m_NrThreads)
 		return;
 
+	/*
+	 * Coordinates:
+	 *
+	 * m_numLines: The total number of (x, y, z) mesh lines covered
+	 * by the UPML engine.
+	 *
+	 *	m_numX: The total number of x mesh lines covered by the current
+	 *	thread of the UPML engine, determined by splitting m_numLines[0]
+	 *	into multiple block on the X axis before starting simulation by
+	 *	SetNumberOfThreads().
+	 *
+	 *	m_StartPos: The offset between the main engine's field and the
+	 *	UPML engine's field.
+	 *
+	 * m_start: The x offset between the beginning of UPML engine's
+	 * field and the block covered by the current thread.
+	 *
+	 * pos: The (x, y, z) position of the main engine's field, with
+	 * both the m_StartPos and m_start offset.
+	 *
+	 * loc_pos: The (x', y', z') position of the UPML engine's local
+	 * field, without the main-to-UPML m_StartPos offset, but with the
+	 * UPML-to-local-thread m_start offset.
+	 *
+	 * For example, if UPML starts at (10, 10, 10), but the current
+	 * thread is processing (13, 13, 13). Then we have pos(13, 13, 13)
+	 * and loc_pos(3, 3, 3), with m_StartPos = 10 and m_start = 3.
+	 */
 	unsigned int pos[3];
 	unsigned int loc_pos[3];
 	FDTD_FLOAT f_help;
