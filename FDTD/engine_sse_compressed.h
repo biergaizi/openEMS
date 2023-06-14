@@ -31,8 +31,8 @@ protected:
 	Engine_SSE_Compressed(const Operator_SSE_Compressed* op);
 	const Operator_SSE_Compressed* Op;
 
-	virtual void UpdateVoltages(unsigned int startX, unsigned int numX);
-	virtual void UpdateCurrents(unsigned int startX, unsigned int numX);
+	virtual void UpdateVoltages(int start[3], int end[3]);
+	virtual void UpdateCurrents(int start[3], int end[3]);
 };
 
 #endif // ENGINE_SSE_COMPRESSED_H

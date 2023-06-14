@@ -75,8 +75,14 @@ void Engine_sse::Reset()
 	f4_curr_ptr = 0;
 }
 
-void Engine_sse::UpdateVoltages(unsigned int startX, unsigned int numX)
+void Engine_sse::UpdateVoltages(int start[3], int end[3])
 {
+	if (start[2] != 0 || end[2] != numLines[2] - 1)
+	{
+		std::cerr << "tiling on the Z axis is currently unsupported" << std::endl;
+		std::exit(1);
+	}
+
 	Flat_N_3DArray<f4vector> &f4_volt = *f4_volt_ptr;
 	Flat_N_3DArray<f4vector> &f4_curr = *f4_curr_ptr;
 	Flat_N_3DArray<f4vector> &op_f4_vv = *Op->f4_vv_ptr;
@@ -86,14 +92,13 @@ void Engine_sse::UpdateVoltages(unsigned int startX, unsigned int numX)
 	bool shift[2];
 	f4vector temp;
 
-	pos[0] = startX;
-	for (unsigned int posX=0; posX<numX; ++posX)
+	for (pos[0] = start[0]; pos[0] <= end[0]; ++pos[0])
 	{
 		shift[0]=pos[0];
-		for (pos[1]=0; pos[1]<numLines[1]; ++pos[1])
+		for (pos[1] = start[1]; pos[1] <= end[1]; ++pos[1])
 		{
 			shift[1]=pos[1];
-			for (pos[2]=1; pos[2]<numVectors; ++pos[2])
+			for (pos[2] = 1; pos[2] < numVectors; ++pos[2])
 			{
 				// x-polarization
 				f4_volt(0, pos[0], pos[1], pos[2]).v *=
@@ -175,8 +180,14 @@ void Engine_sse::UpdateVoltages(unsigned int startX, unsigned int numX)
 	}
 }
 
-void Engine_sse::UpdateCurrents(unsigned int startX, unsigned int numX)
+void Engine_sse::UpdateCurrents(int start[3], int end[3])
 {
+	if (start[2] != 0 || end[2] != numLines[2] - 2)
+	{
+		std::cerr << "tiling on the Z axis is currently unsupported" << std::endl;
+		std::exit(1);
+	}
+
 	Flat_N_3DArray<f4vector> &f4_volt = *f4_volt_ptr;
 	Flat_N_3DArray<f4vector> &f4_curr = *f4_curr_ptr;
 	Flat_N_3DArray<f4vector> &op_f4_iv = *Op->f4_iv_ptr;
@@ -185,12 +196,11 @@ void Engine_sse::UpdateCurrents(unsigned int startX, unsigned int numX)
 	unsigned int pos[5];
 	f4vector temp;
 
-	pos[0] = startX;
-	for (unsigned int posX=0; posX<numX; ++posX)
+	for (pos[0] = start[0]; pos[0] <= end[0]; ++pos[0])
 	{
-		for (pos[1]=0; pos[1]<numLines[1]-1; ++pos[1])
+		for (pos[1] = start[1]; pos[1] <= end[1]; ++pos[1])
 		{
-			for (pos[2]=0; pos[2]<numVectors-1; ++pos[2])
+			for (pos[2] = start[2]; pos[2] < numVectors - 1; ++pos[2])
 			{
 				// x-pol
 				f4_curr(0, pos[0], pos[1], pos[2]).v *=

@@ -105,20 +105,19 @@ void Engine::Reset()
 	ClearExtensions();
 }
 
-void Engine::UpdateVoltages(unsigned int startX, unsigned int numX)
+void Engine::UpdateVoltages(int start[3], int end[3])
 {
 	unsigned int pos[3];
 	bool shift[3];
 
-	pos[0] = startX;
 	//voltage updates
-	for (unsigned int posX=0; posX<numX; ++posX)
+	for (pos[0] = start[0]; pos[0] <= end[0]; ++pos[0])
 	{
 		shift[0]=pos[0];
-		for (pos[1]=0; pos[1]<numLines[1]; ++pos[1])
+		for (pos[1] = start[1]; pos[1] <= end[1]; ++pos[1])
 		{
 			shift[1]=pos[1];
-			for (pos[2]=0; pos[2]<numLines[2]; ++pos[2])
+			for (pos[2] = start[2]; pos[2] <= end[2]; ++pos[2])
 			{
 				shift[2]=pos[2];
 				//do the updates here
@@ -156,19 +155,17 @@ void Engine::UpdateVoltages(unsigned int startX, unsigned int numX)
 				    );
 			}
 		}
-		++pos[0];
 	}
 }
 
-void Engine::UpdateCurrents(unsigned int startX, unsigned int numX)
+void Engine::UpdateCurrents(int start[3], int end[3])
 {
 	unsigned int pos[3];
-	pos[0] = startX;
-	for (unsigned int posX=0; posX<numX; ++posX)
+	for (pos[0] = start[0]; pos[0] <= end[0]; ++pos[0])
 	{
-		for (pos[1]=0; pos[1]<numLines[1]-1; ++pos[1])
+		for (pos[1] = start[1]; pos[1] <= end[1]; ++pos[1])
 		{
-			for (pos[2]=0; pos[2]<numLines[2]-1; ++pos[2])
+			for (pos[2] = start[2]; pos[2] <= end[2]; ++pos[2])
 			{
 				//do the updates here
 				//for x
@@ -254,17 +251,23 @@ void Engine::Apply2Current()
 
 bool Engine::IterateTS(unsigned int iterTS)
 {
+	int voltageStart[3] = {0, 0, 0};
+	int voltageEnd[3]   = {numLines[0] - 1, numLines[1] - 1, numLines[2] - 1};
+
+	int currentStart[3] = {0, 0, 0};
+	int currentEnd[3]   = {numLines[0] - 2, numLines[1] - 2, numLines[2] - 2};
+
 	for (unsigned int iter=0; iter<iterTS; ++iter)
 	{
 		//voltage updates with extensions
 		DoPreVoltageUpdates();
-		UpdateVoltages(0,numLines[0]);
+		UpdateVoltages(voltageStart, voltageEnd);
 		DoPostVoltageUpdates();
 		Apply2Voltages();
 
 		//current updates with extensions
 		DoPreCurrentUpdates();
-		UpdateCurrents(0,numLines[0]-1);
+		UpdateCurrents(currentStart, currentEnd);
 		DoPostCurrentUpdates();
 		Apply2Current();
 
