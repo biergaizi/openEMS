@@ -335,13 +335,21 @@ void thread::operator()()
 
 		DEBUG_TIME( Timer timer1 );
 
+		auto op = m_enginePtr->m_Op_MT;
+
+		int voltageStart[3] = {m_start, 0, 0};
+		int voltageEnd[3]   = {m_stop, op->GetNumberOfLines(1) - 1, op->GetNumberOfLines(2) - 1};
+
+		int currentStart[3] = {m_start, 0, 0};
+		int currentEnd[3]   = {m_stop_h, op->GetNumberOfLines(1) - 2, op->GetNumberOfLines(2) - 2};
+
 		for (unsigned int iter=0; iter<m_enginePtr->m_iterTS; ++iter)
 		{
 			// pre voltage stuff...
 			m_enginePtr->DoPreVoltageUpdates(m_threadID);
 
 			//voltage updates
-			m_enginePtr->UpdateVoltages(m_start,m_stop-m_start+1);
+			m_enginePtr->UpdateVoltages(voltageStart, voltageEnd);
 
 			// record time
 			DEBUG_TIME( m_enginePtr->m_timer_list[boost::this_thread::get_id()].push_back( timer1.elapsed() ); )
@@ -373,7 +381,7 @@ void thread::operator()()
 			m_enginePtr->DoPreCurrentUpdates(m_threadID);
 
 			//current updates
-			m_enginePtr->UpdateCurrents(m_start,m_stop_h-m_start+1);
+			m_enginePtr->UpdateCurrents(currentStart, currentEnd);
 
 			// record time
 			DEBUG_TIME( m_enginePtr->m_timer_list[boost::this_thread::get_id()].push_back( timer1.elapsed() ); )
