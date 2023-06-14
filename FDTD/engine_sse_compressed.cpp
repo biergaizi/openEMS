@@ -37,8 +37,14 @@ Engine_SSE_Compressed::~Engine_SSE_Compressed()
 {
 }
 
-void Engine_SSE_Compressed::UpdateVoltages(unsigned int startX, unsigned int numX)
+void Engine_SSE_Compressed::UpdateVoltages(unsigned int start[3], unsigned int stop[3])
 {
+	if (start[2] != 0 || stop[2] != numLines[2] - 1)
+	{
+		std::cerr << "tiling on the Z axis is currently unsupported" << std::endl;
+		std::exit(1);
+	}
+
 	Flat_N_3DArray<f4vector> &f4_volt = *f4_volt_ptr;
 	Flat_N_3DArray<f4vector> &f4_curr = *f4_curr_ptr;
 
@@ -46,15 +52,14 @@ void Engine_SSE_Compressed::UpdateVoltages(unsigned int startX, unsigned int num
 	bool shift[2];
 	f4vector temp;
 
-	pos[0] = startX;
 	unsigned int index=0;
-	for (unsigned int posX=0; posX<numX; ++posX)
+	for (pos[0] = start[0]; pos[0] <= stop[0]; ++pos[0])
 	{
 		shift[0]=pos[0];
-		for (pos[1]=0; pos[1]<numLines[1]; ++pos[1])
+		for (pos[1] = start[1]; pos[1] <= stop[1]; ++pos[1])
 		{
 			shift[1]=pos[1];
-			for (pos[2]=1; pos[2]<numVectors; ++pos[2])
+			for (pos[2] = 1; pos[2] < numVectors; ++pos[2])
 			{
 				index = Op->m_Op_index[pos[0]][pos[1]][pos[2]];
 				// x-polarization
@@ -146,25 +151,29 @@ void Engine_SSE_Compressed::UpdateVoltages(unsigned int startX, unsigned int num
 			        f4_curr(0, pos[0],          pos[1]-shift[1], 0).v
 			    );
 		}
-		++pos[0];
 	}
 }
 
-void Engine_SSE_Compressed::UpdateCurrents(unsigned int startX, unsigned int numX)
+void Engine_SSE_Compressed::UpdateCurrents(unsigned int start[3], unsigned int stop[3])
 {
+	if (start[2] != 0 || stop[2] != numLines[2] - 2)
+	{
+		std::cerr << "tiling on the Z axis is currently unsupported" << std::endl;
+		std::exit(1);
+	}
+
 	Flat_N_3DArray<f4vector> &f4_volt = *f4_volt_ptr;
 	Flat_N_3DArray<f4vector> &f4_curr = *f4_curr_ptr;
 
 	unsigned int pos[3];
 	f4vector temp;
 
-	pos[0] = startX;
 	unsigned int index;
-	for (unsigned int posX=0; posX<numX; ++posX)
+	for (pos[0] = start[0]; pos[0] <= stop[0]; ++pos[0])
 	{
-		for (pos[1]=0; pos[1]<numLines[1]-1; ++pos[1])
+		for (pos[1] = start[1]; pos[1] <= stop[1]; ++pos[1])
 		{
-			for (pos[2]=0; pos[2]<numVectors-1; ++pos[2])
+			for (pos[2] = start[2]; pos[2] < numVectors - 1; ++pos[2])
 			{
 				index = Op->m_Op_index[pos[0]][pos[1]][pos[2]];
 				// x-pol
@@ -256,6 +265,5 @@ void Engine_SSE_Compressed::UpdateCurrents(unsigned int startX, unsigned int num
 			        f4_volt(0, pos[0],   pos[1]+1, numVectors-1).v
 			    );
 		}
-		++pos[0];
 	}
 }

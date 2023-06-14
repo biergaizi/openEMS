@@ -76,8 +76,8 @@ protected:
 	Engine_sse(const Operator_sse* op);
 	const Operator_sse* Op;
 
-	virtual void UpdateVoltages(unsigned int startX, unsigned int numX);
-	virtual void UpdateCurrents(unsigned int startX, unsigned int numX);
+	virtual void UpdateVoltages(unsigned int start[3], unsigned int stop[3]);
+	virtual void UpdateCurrents(unsigned int start[3], unsigned int stop[3]);
 
 	unsigned int numVectors;
 

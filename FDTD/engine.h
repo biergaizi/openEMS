@@ -63,7 +63,7 @@ public:
 	//! Execute Pre-Voltage extension updates
 	virtual void DoPreVoltageUpdates();
 	//! Main FDTD engine voltage updates
-	virtual void UpdateVoltages(unsigned int startX, unsigned int numX);
+	virtual void UpdateVoltages(unsigned int start[3], unsigned int stop[3]);
 	//! Execute Post-Voltage extension updates
 	virtual void DoPostVoltageUpdates();
 	//! Apply extension voltage changes
@@ -72,7 +72,7 @@ public:
 	//! Execute Pre-Current extension updates
 	virtual void DoPreCurrentUpdates();
 	//! Main FDTD engine current updates
-	virtual void UpdateCurrents(unsigned int startX, unsigned int numX);
+	virtual void UpdateCurrents(unsigned int start[3], unsigned int stop[3]);
 	//! Execute Post-Current extension updates
 	virtual void DoPostCurrentUpdates();
 	//! Apply extension current changes
