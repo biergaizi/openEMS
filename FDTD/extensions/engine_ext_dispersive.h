@@ -30,8 +30,8 @@ public:
 	Engine_Ext_Dispersive(Operator_Ext_Dispersive* op_ext_disp);
 	virtual ~Engine_Ext_Dispersive();
 
-	virtual void Apply2Voltages();
-	virtual void Apply2Current();
+	virtual void Apply2Voltages(int threadID, int start[3], int end[3]);
+	virtual void Apply2Current(int threadID, int start[3], int end[3]);
 
 protected:
 	Operator_Ext_Dispersive* m_Op_Ext_Disp;
@@ -46,6 +46,8 @@ protected:
 	//! ADE voltages
 	// Array setup: volt_ADE[N_order][direction][mesh_pos]
 	FDTD_FLOAT ***volt_ADE;
+
+	bool InsideTile(int start[3], int end[3], int ade_x, int ade_y, int ade_z);
 };
 
 #endif // ENGINE_EXT_DISPERSIVE_H
