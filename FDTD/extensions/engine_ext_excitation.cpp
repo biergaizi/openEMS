@@ -37,14 +37,22 @@ bool Engine_Ext_Excitation::InsideTile(
 	int ext_x, int ext_y, int ext_z
 )
 {
+	int retval;
+
 	if (ext_x < start[0] || ext_x > end[0])
-		return false;
+		retval = false;
 	else if (ext_y < start[1] || ext_y > end[1])
-		return false;
+		retval = false;
 	else if (ext_z < start[2] || ext_z > end[2])
-		return false;
+		retval = false;
 	else
-		return true;
+		retval = true;
+
+	if (!retval)
+	{
+		fprintf(stderr, "Excitation: cell rejected.\n");
+	}
+	return retval;
 }
 
 void Engine_Ext_Excitation::Apply2Voltages(int threadID, int start[3], int end[3])
