@@ -30,11 +30,12 @@ public:
 	Engine_Ext_Excitation(Operator_Ext_Excitation* op_ext);
 	virtual ~Engine_Ext_Excitation();
 
-	virtual void Apply2Voltages();
-	virtual void Apply2Current();
+	virtual void Apply2Voltages(int threadID, int start[3], int end[3]);
+	virtual void Apply2Current(int threadID, int start[3], int end[3]);
 
 protected:
 	Operator_Ext_Excitation* m_Op_Exc;
+	bool InsideTile(int start[3], int end[3], int ext_x, int ext_y, int ext_z);
 };
 
 #endif // ENGINE_EXT_EXCITATION_H

@@ -30,7 +30,24 @@ Engine_Ext_Excitation::~Engine_Ext_Excitation()
 
 }
 
-void Engine_Ext_Excitation::Apply2Voltages()
+// Whether the excited cell (ext_x, ext_y, ext_z) is inside the
+// tile that is currently being processed.
+bool Engine_Ext_Excitation::InsideTile(
+	int start[3], int end[3],
+	int ext_x, int ext_y, int ext_z
+)
+{
+	if (ext_x < start[0] || ext_x > end[0])
+		return false;
+	else if (ext_y < start[1] || ext_y > end[1])
+		return false;
+	else if (ext_z < start[2] || ext_z > end[2])
+		return false;
+	else
+		return true;
+}
+
+void Engine_Ext_Excitation::Apply2Voltages(int threadID, int start[3], int end[3])
 {
 	//soft voltage excitation here (E-field excite)
 	int exc_pos;
@@ -51,14 +68,18 @@ void Engine_Ext_Excitation::Apply2Voltages()
 		{
 			for (unsigned int n=0; n<m_Op_Exc->Volt_Count; ++n)
 			{
+				pos[0]=m_Op_Exc->Volt_index[0][n];
+				pos[1]=m_Op_Exc->Volt_index[1][n];
+				pos[2]=m_Op_Exc->Volt_index[2][n];
+				if (!InsideTile(start, end, pos[0], pos[1], pos[2])) {
+					continue;
+				}
+
 				exc_pos = numTS - (int)m_Op_Exc->Volt_delay[n];
 				exc_pos *= (exc_pos>0);
 				exc_pos %= p;
 				exc_pos *= (exc_pos<(int)length);
 				ny = m_Op_Exc->Volt_dir[n];
-				pos[0]=m_Op_Exc->Volt_index[0][n];
-				pos[1]=m_Op_Exc->Volt_index[1][n];
-				pos[2]=m_Op_Exc->Volt_index[2][n];
 				m_Eng->Engine::SetVolt(ny,pos, m_Eng->Engine::GetVolt(ny,pos) + m_Op_Exc->Volt_amp[n]*exc_volt[exc_pos]);
 			}
 			break;
@@ -67,15 +88,19 @@ void Engine_Ext_Excitation::Apply2Voltages()
 		{
 			for (unsigned int n=0; n<m_Op_Exc->Volt_Count; ++n)
 			{
+				pos[0]=m_Op_Exc->Volt_index[0][n];
+				pos[1]=m_Op_Exc->Volt_index[1][n];
+				pos[2]=m_Op_Exc->Volt_index[2][n];
+				if (!InsideTile(start, end, pos[0], pos[1], pos[2])) {
+					continue;
+				}
+
 				Engine_sse* eng_sse = (Engine_sse*) m_Eng;
 				exc_pos = numTS - (int)m_Op_Exc->Volt_delay[n];
 				exc_pos *= (exc_pos>0);
 				exc_pos %= p;
 				exc_pos *= (exc_pos<(int)length);
 				ny = m_Op_Exc->Volt_dir[n];
-				pos[0]=m_Op_Exc->Volt_index[0][n];
-				pos[1]=m_Op_Exc->Volt_index[1][n];
-				pos[2]=m_Op_Exc->Volt_index[2][n];
 				eng_sse->Engine_sse::SetVolt(ny,pos, eng_sse->Engine_sse::GetVolt(ny,pos) + m_Op_Exc->Volt_amp[n]*exc_volt[exc_pos]);
 			}
 			break;
@@ -84,14 +109,18 @@ void Engine_Ext_Excitation::Apply2Voltages()
 		{
 			for (unsigned int n=0; n<m_Op_Exc->Volt_Count; ++n)
 			{
+				pos[0]=m_Op_Exc->Volt_index[0][n];
+				pos[1]=m_Op_Exc->Volt_index[1][n];
+				pos[2]=m_Op_Exc->Volt_index[2][n];
+				if (!InsideTile(start, end, pos[0], pos[1], pos[2])) {
+					continue;
+				}
+
 				exc_pos = numTS - (int)m_Op_Exc->Volt_delay[n];
 				exc_pos *= (exc_pos>0);
 				exc_pos %= p;
 				exc_pos *= (exc_pos<(int)length);
 				ny = m_Op_Exc->Volt_dir[n];
-				pos[0]=m_Op_Exc->Volt_index[0][n];
-				pos[1]=m_Op_Exc->Volt_index[1][n];
-				pos[2]=m_Op_Exc->Volt_index[2][n];
 				m_Eng->SetVolt(ny,pos, m_Eng->GetVolt(ny,pos) + m_Op_Exc->Volt_amp[n]*exc_volt[exc_pos]);
 			}
 			break;
@@ -99,7 +128,7 @@ void Engine_Ext_Excitation::Apply2Voltages()
 	}
 }
 
-void Engine_Ext_Excitation::Apply2Current()
+void Engine_Ext_Excitation::Apply2Current(int threadID, int start[3], int end[3])
 {
 	//soft current excitation here (H-field excite)
 
@@ -121,14 +150,18 @@ void Engine_Ext_Excitation::Apply2Current()
 		{
 			for (unsigned int n=0; n<m_Op_Exc->Curr_Count; ++n)
 			{
+				pos[0]=m_Op_Exc->Curr_index[0][n];
+				pos[1]=m_Op_Exc->Curr_index[1][n];
+				pos[2]=m_Op_Exc->Curr_index[2][n];
+				if (!InsideTile(start, end, pos[0], pos[1], pos[2])) {
+					continue;
+				}
+
 				exc_pos = numTS - (int)m_Op_Exc->Curr_delay[n];
 				exc_pos *= (exc_pos>0);
 				exc_pos %= p;
 				exc_pos *= (exc_pos<(int)length);
 				ny = m_Op_Exc->Curr_dir[n];
-				pos[0]=m_Op_Exc->Curr_index[0][n];
-				pos[1]=m_Op_Exc->Curr_index[1][n];
-				pos[2]=m_Op_Exc->Curr_index[2][n];
 				m_Eng->Engine::SetCurr(ny,pos, m_Eng->Engine::GetCurr(ny,pos) + m_Op_Exc->Curr_amp[n]*exc_curr[exc_pos]);
 			}
 			break;
@@ -137,15 +170,19 @@ void Engine_Ext_Excitation::Apply2Current()
 		{
 			for (unsigned int n=0; n<m_Op_Exc->Curr_Count; ++n)
 			{
+				pos[0]=m_Op_Exc->Curr_index[0][n];
+				pos[1]=m_Op_Exc->Curr_index[1][n];
+				pos[2]=m_Op_Exc->Curr_index[2][n];
+				if (!InsideTile(start, end, pos[0], pos[1], pos[2])) {
+					continue;
+				}
+
 				Engine_sse* eng_sse = (Engine_sse*) m_Eng;
 				exc_pos = numTS - (int)m_Op_Exc->Curr_delay[n];
 				exc_pos *= (exc_pos>0);
 				exc_pos %= p;
 				exc_pos *= (exc_pos<(int)length);
 				ny = m_Op_Exc->Curr_dir[n];
-				pos[0]=m_Op_Exc->Curr_index[0][n];
-				pos[1]=m_Op_Exc->Curr_index[1][n];
-				pos[2]=m_Op_Exc->Curr_index[2][n];
 				eng_sse->Engine_sse::SetCurr(ny,pos, eng_sse->Engine_sse::GetCurr(ny,pos) + m_Op_Exc->Curr_amp[n]*exc_curr[exc_pos]);
 			}
 			break;
@@ -154,14 +191,18 @@ void Engine_Ext_Excitation::Apply2Current()
 		{
 			for (unsigned int n=0; n<m_Op_Exc->Curr_Count; ++n)
 			{
+				pos[0]=m_Op_Exc->Curr_index[0][n];
+				pos[1]=m_Op_Exc->Curr_index[1][n];
+				pos[2]=m_Op_Exc->Curr_index[2][n];
+				if (!InsideTile(start, end, pos[0], pos[1], pos[2])) {
+					continue;
+				}
+
 				exc_pos = numTS - (int)m_Op_Exc->Curr_delay[n];
 				exc_pos *= (exc_pos>0);
 				exc_pos %= p;
 				exc_pos *= (exc_pos<(int)length);
 				ny = m_Op_Exc->Curr_dir[n];
-				pos[0]=m_Op_Exc->Curr_index[0][n];
-				pos[1]=m_Op_Exc->Curr_index[1][n];
-				pos[2]=m_Op_Exc->Curr_index[2][n];
 				m_Eng->SetCurr(ny,pos, m_Eng->GetCurr(ny,pos) + m_Op_Exc->Curr_amp[n]*exc_curr[exc_pos]);
 			}
 			break;
