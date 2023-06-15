@@ -28,9 +28,15 @@ Engine_Ext_UPML::Engine_Ext_UPML(Operator_Ext_UPML* op_ext) : Engine_Extension(o
 	//this ABC extension should be executed first!
 	m_Priority = ENG_EXT_PRIO_UPML;
 
+	// this extension support the tiling engine
+	m_TilingSupported = true;
+
 	volt_flux_ptr = Create_Flat_N_3DArray<FDTD_FLOAT>(m_Op_UPML->m_numLines);
 	curr_flux_ptr = Create_Flat_N_3DArray<FDTD_FLOAT>(m_Op_UPML->m_numLines);
 
+	// only matters for non-tiling engines, in the tiling engine,
+	// the domain partitioning is determined by the engine, not
+	// the extension
 	SetNumberOfThreads(1);
 }
 
@@ -53,15 +59,60 @@ void Engine_Ext_UPML::SetNumberOfThreads(int nrThread)
 		m_start.at(n) = m_start.at(n-1) + m_numX.at(n-1);
 }
 
-
-void Engine_Ext_UPML::DoPreVoltageUpdates(int threadID)
+// When the tiling engine is used (methods with arguments "timestep",
+// "start", and "stop"), the global 3D space is divided into small
+// tiles for processing. We need to know whether the current tile
+// overlaps with UPML. If there's no overlap, return immediately.
+// If there's overlap, return the local UPML coordinates of the
+// overlapped region.
+bool
+Engine_Ext_UPML::ToLocalCoords(
+	unsigned int start[3], unsigned int end[3],
+	unsigned int localStart[3], unsigned int localEnd[3]
+)
 {
-	if (m_Eng==NULL)
-		return;
+	unsigned int pmlEnd[3] = {
+		m_Op_UPML->m_StartPos[0] + m_Op_UPML->m_numLines[0] - 1,
+		m_Op_UPML->m_StartPos[1] + m_Op_UPML->m_numLines[1] - 1,
+		m_Op_UPML->m_StartPos[2] + m_Op_UPML->m_numLines[2] - 1
+	};
 
-	if (threadID>=m_NrThreads)
-		return;
+	if (!start && !end)
+	{
+		const static int threadID = 0;
+		localStart[0] = m_start.at(0);
+		localStart[1] = 0;
+		localStart[2] = 0;
 
+		localEnd[0] = m_numX.at(0) - 1;
+		localEnd[1] = m_Op_UPML->m_numLines[1] - 1;
+		localEnd[2] = m_Op_UPML->m_numLines[2] - 1;
+
+		return false;
+	}
+
+	for (int i = 0; i < 3; i++)
+	{
+		if (start[i] <= pmlEnd[i] && end[i] >= m_Op_UPML->m_StartPos[i])
+		{
+			// Return the overlapped region between the current tile and UPML>
+			localStart[i] = std::max((int) start[i], (int) m_Op_UPML->m_StartPos[i]);
+			localEnd[i] = std::min((int) end[i], (int) pmlEnd[i]);
+			localEnd[i] -= m_Op_UPML->m_StartPos[i];
+			localStart[i] -= m_Op_UPML->m_StartPos[i];
+		}
+		else
+		{
+			// Tile and UPML do not overlap.
+			return false;
+		}
+	}
+
+	return true;
+}
+
+void Engine_Ext_UPML::DoPreVoltageUpdatesKernel(unsigned int loc_start[3], unsigned int loc_stop[3])
+{
 	unsigned int pos[3];
 	unsigned int loc_pos[3];
 	FDTD_FLOAT f_help;
@@ -74,14 +125,13 @@ void Engine_Ext_UPML::DoPreVoltageUpdates(int threadID)
 	{
 	case Engine::BASIC:
 		{
-			for (unsigned int lineX=0; lineX<m_numX.at(threadID); ++lineX)
+			for (loc_pos[0] = loc_start[0]; loc_pos[0] <= loc_stop[0]; ++loc_pos[0])
 			{
-				loc_pos[0]=lineX+m_start.at(threadID);
 				pos[0] = loc_pos[0] + m_Op_UPML->m_StartPos[0];
-				for (loc_pos[1]=0; loc_pos[1]<m_Op_UPML->m_numLines[1]; ++loc_pos[1])
+				for (loc_pos[1] = loc_start[1]; loc_pos[1] <= loc_stop[1]; ++loc_pos[1])
 				{
 					pos[1] = loc_pos[1] + m_Op_UPML->m_StartPos[1];
-					for (loc_pos[2]=0; loc_pos[2]<m_Op_UPML->m_numLines[2]; ++loc_pos[2])
+					for (loc_pos[2] = loc_start[2]; loc_pos[2] <= loc_stop[2]; ++loc_pos[2])
 					{
 						pos[2] = loc_pos[2] + m_Op_UPML->m_StartPos[2];
 
@@ -107,14 +157,13 @@ void Engine_Ext_UPML::DoPreVoltageUpdates(int threadID)
 	case Engine::SSE:
 		{
 			Engine_sse* eng_sse = (Engine_sse*) m_Eng;
-			for (unsigned int lineX=0; lineX<m_numX.at(threadID); ++lineX)
+			for (loc_pos[0] = loc_start[0]; loc_pos[0] <= loc_stop[0]; ++loc_pos[0])
 			{
-				loc_pos[0]=lineX+m_start.at(threadID);
 				pos[0] = loc_pos[0] + m_Op_UPML->m_StartPos[0];
-				for (loc_pos[1]=0; loc_pos[1]<m_Op_UPML->m_numLines[1]; ++loc_pos[1])
+				for (loc_pos[1] = loc_start[1]; loc_pos[1] <= loc_stop[1]; ++loc_pos[1])
 				{
 					pos[1] = loc_pos[1] + m_Op_UPML->m_StartPos[1];
-					for (loc_pos[2]=0; loc_pos[2]<m_Op_UPML->m_numLines[2]; ++loc_pos[2])
+					for (loc_pos[2] = loc_start[2]; loc_pos[2] <= loc_stop[2]; ++loc_pos[2])
 					{
 						pos[2] = loc_pos[2] + m_Op_UPML->m_StartPos[2];
 
@@ -139,14 +188,13 @@ void Engine_Ext_UPML::DoPreVoltageUpdates(int threadID)
 		}
 	default:
 		{
-			for (unsigned int lineX=0; lineX<m_numX.at(threadID); ++lineX)
+			for (loc_pos[0] = loc_start[0]; loc_pos[0] <= loc_stop[0]; ++loc_pos[0])
 			{
-				loc_pos[0]=lineX+m_start.at(threadID);
 				pos[0] = loc_pos[0] + m_Op_UPML->m_StartPos[0];
-				for (loc_pos[1]=0; loc_pos[1]<m_Op_UPML->m_numLines[1]; ++loc_pos[1])
+				for (loc_pos[1] = loc_start[1]; loc_pos[1] <= loc_stop[1]; ++loc_pos[1])
 				{
 					pos[1] = loc_pos[1] + m_Op_UPML->m_StartPos[1];
-					for (loc_pos[2]=0; loc_pos[2]<m_Op_UPML->m_numLines[2]; ++loc_pos[2])
+					for (loc_pos[2] = loc_start[2]; loc_pos[2] <= loc_stop[2]; ++loc_pos[2])
 					{
 						pos[2] = loc_pos[2] + m_Op_UPML->m_StartPos[2];
 
@@ -173,13 +221,47 @@ void Engine_Ext_UPML::DoPreVoltageUpdates(int threadID)
 
 }
 
-void Engine_Ext_UPML::DoPostVoltageUpdates(int threadID)
+void Engine_Ext_UPML::DoPreVoltageUpdates(int threadID)
 {
 	if (m_Eng==NULL)
 		return;
 	if (threadID>=m_NrThreads)
 		return;
 
+	// Calculate the start and stop lines using UPML's local
+	// coordinate system. For example, if UPML exists between
+	// (10, 10, 10) and (18, 18, 18) in the main grid, for UPML
+	// it's (0, 0, 0) to (8, 8, 8).
+
+	unsigned int loc_start[3] = {
+		0, 0, 0
+	};
+	unsigned int loc_stop[3] = {
+		m_numX.at(threadID) - 1,
+		m_Op_UPML->m_numLines[1] - 1,
+		m_Op_UPML->m_numLines[2] - 1
+	};
+
+	DoPreVoltageUpdatesKernel(loc_start, loc_stop);
+}
+
+void Engine_Ext_UPML::DoPreVoltageUpdates(int timestep, unsigned int start[3], unsigned int stop[3])
+{
+	unsigned int loc_start[3];
+	unsigned int loc_stop[3];
+
+	bool insidePML = ToLocalCoords(start, stop, loc_start, loc_stop);
+	if (!insidePML)
+	{
+		// no overlap between the current tile and UPML, do nothing.
+		return;
+	}
+
+	DoPreVoltageUpdatesKernel(loc_start, loc_stop);
+}
+
+void Engine_Ext_UPML::DoPostVoltageUpdatesKernel(unsigned int loc_start[3], unsigned int loc_stop[3])
+{
 	unsigned int pos[3];
 	unsigned int loc_pos[3];
 	FDTD_FLOAT f_help;
@@ -191,14 +273,13 @@ void Engine_Ext_UPML::DoPostVoltageUpdates(int threadID)
 	{
 	case Engine::BASIC:
 		{
-			for (unsigned int lineX=0; lineX<m_numX.at(threadID); ++lineX)
+			for (loc_pos[0] = loc_start[0]; loc_pos[0] <= loc_stop[0]; ++loc_pos[0])
 			{
-				loc_pos[0]=lineX+m_start.at(threadID);
 				pos[0] = loc_pos[0] + m_Op_UPML->m_StartPos[0];
-				for (loc_pos[1]=0; loc_pos[1]<m_Op_UPML->m_numLines[1]; ++loc_pos[1])
+				for (loc_pos[1] = loc_start[1]; loc_pos[1] <= loc_stop[1]; ++loc_pos[1])
 				{
 					pos[1] = loc_pos[1] + m_Op_UPML->m_StartPos[1];
-					for (loc_pos[2]=0; loc_pos[2]<m_Op_UPML->m_numLines[2]; ++loc_pos[2])
+					for (loc_pos[2] = loc_start[2]; loc_pos[2] <= loc_stop[2]; ++loc_pos[2])
 					{
 						pos[2] = loc_pos[2] + m_Op_UPML->m_StartPos[2];
 
@@ -221,14 +302,13 @@ void Engine_Ext_UPML::DoPostVoltageUpdates(int threadID)
 	case Engine::SSE:
 		{
 			Engine_sse* eng_sse = (Engine_sse*) m_Eng;
-			for (unsigned int lineX=0; lineX<m_numX.at(threadID); ++lineX)
+			for (loc_pos[0] = loc_start[0]; loc_pos[0] <= loc_stop[0]; ++loc_pos[0])
 			{
-				loc_pos[0]=lineX+m_start.at(threadID);
 				pos[0] = loc_pos[0] + m_Op_UPML->m_StartPos[0];
-				for (loc_pos[1]=0; loc_pos[1]<m_Op_UPML->m_numLines[1]; ++loc_pos[1])
+				for (loc_pos[1] = loc_start[1]; loc_pos[1] <= loc_stop[1]; ++loc_pos[1])
 				{
 					pos[1] = loc_pos[1] + m_Op_UPML->m_StartPos[1];
-					for (loc_pos[2]=0; loc_pos[2]<m_Op_UPML->m_numLines[2]; ++loc_pos[2])
+					for (loc_pos[2] = loc_start[2]; loc_pos[2] <= loc_stop[2]; ++loc_pos[2])
 					{
 						pos[2] = loc_pos[2] + m_Op_UPML->m_StartPos[2];
 
@@ -250,14 +330,13 @@ void Engine_Ext_UPML::DoPostVoltageUpdates(int threadID)
 		}
 	default:
 		{
-			for (unsigned int lineX=0; lineX<m_numX.at(threadID); ++lineX)
+			for (loc_pos[0] = loc_start[0]; loc_pos[0] <= loc_stop[0]; ++loc_pos[0])
 			{
-				loc_pos[0]=lineX+m_start.at(threadID);
 				pos[0] = loc_pos[0] + m_Op_UPML->m_StartPos[0];
-				for (loc_pos[1]=0; loc_pos[1]<m_Op_UPML->m_numLines[1]; ++loc_pos[1])
+				for (loc_pos[1] = loc_start[1]; loc_pos[1] <= loc_stop[1]; ++loc_pos[1])
 				{
 					pos[1] = loc_pos[1] + m_Op_UPML->m_StartPos[1];
-					for (loc_pos[2]=0; loc_pos[2]<m_Op_UPML->m_numLines[2]; ++loc_pos[2])
+					for (loc_pos[2] = loc_start[2]; loc_pos[2] <= loc_stop[2]; ++loc_pos[2])
 					{
 						pos[2] = loc_pos[2] + m_Op_UPML->m_StartPos[2];
 
@@ -281,13 +360,47 @@ void Engine_Ext_UPML::DoPostVoltageUpdates(int threadID)
 
 }
 
-void Engine_Ext_UPML::DoPreCurrentUpdates(int threadID)
+void Engine_Ext_UPML::DoPostVoltageUpdates(int threadID)
 {
 	if (m_Eng==NULL)
 		return;
 	if (threadID>=m_NrThreads)
 		return;
 
+	// Calculate the start and stop lines using UPML's local
+	// coordinate system. For example, if UPML exists between
+	// (10, 10, 10) and (18, 18, 18) in the main grid, for UPML
+	// it's (0, 0, 0) to (8, 8, 8).
+
+	unsigned int loc_start[3] = {
+		0, 0, 0
+	};
+	unsigned int loc_stop[3] = {
+		m_numX.at(threadID) - 1,
+		m_Op_UPML->m_numLines[1] - 1,
+		m_Op_UPML->m_numLines[2] - 1
+	};
+
+	DoPostVoltageUpdatesKernel(loc_start, loc_stop);
+}
+
+void Engine_Ext_UPML::DoPostVoltageUpdates(int timestep, unsigned int start[3], unsigned int stop[3])
+{
+	unsigned int loc_start[3];
+	unsigned int loc_stop[3];
+
+	bool insidePML = ToLocalCoords(start, stop, loc_start, loc_stop);
+	if (!insidePML)
+	{
+		// no overlap between the current tile and UPML, do nothing.
+		return;
+	}
+
+	DoPostVoltageUpdatesKernel(loc_start, loc_stop);
+}
+
+void Engine_Ext_UPML::DoPreCurrentUpdatesKernel(unsigned int loc_start[3], unsigned int loc_stop[3])
+{
 	unsigned int pos[3];
 	unsigned int loc_pos[3];
 	FDTD_FLOAT f_help;
@@ -300,14 +413,13 @@ void Engine_Ext_UPML::DoPreCurrentUpdates(int threadID)
 	{
 	case Engine::BASIC:
 		{
-			for (unsigned int lineX=0; lineX<m_numX.at(threadID); ++lineX)
+			for (loc_pos[0] = loc_start[0]; loc_pos[0] <= loc_stop[0]; ++loc_pos[0])
 			{
-				loc_pos[0]=lineX+m_start.at(threadID);
 				pos[0] = loc_pos[0] + m_Op_UPML->m_StartPos[0];
-				for (loc_pos[1]=0; loc_pos[1]<m_Op_UPML->m_numLines[1]; ++loc_pos[1])
+				for (loc_pos[1] = loc_start[1]; loc_pos[1] <= loc_stop[1]; ++loc_pos[1])
 				{
 					pos[1] = loc_pos[1] + m_Op_UPML->m_StartPos[1];
-					for (loc_pos[2]=0; loc_pos[2]<m_Op_UPML->m_numLines[2]; ++loc_pos[2])
+					for (loc_pos[2] = loc_start[2]; loc_pos[2] <= loc_stop[2]; ++loc_pos[2])
 					{
 						pos[2] = loc_pos[2] + m_Op_UPML->m_StartPos[2];
 
@@ -333,14 +445,13 @@ void Engine_Ext_UPML::DoPreCurrentUpdates(int threadID)
 	case Engine::SSE:
 		{
 			Engine_sse* eng_sse = (Engine_sse*) m_Eng;
-			for (unsigned int lineX=0; lineX<m_numX.at(threadID); ++lineX)
+			for (loc_pos[0] = loc_start[0]; loc_pos[0] <= loc_stop[0]; ++loc_pos[0])
 			{
-				loc_pos[0]=lineX+m_start.at(threadID);
 				pos[0] = loc_pos[0] + m_Op_UPML->m_StartPos[0];
-				for (loc_pos[1]=0; loc_pos[1]<m_Op_UPML->m_numLines[1]; ++loc_pos[1])
+				for (loc_pos[1] = loc_start[1]; loc_pos[1] <= loc_stop[1]; ++loc_pos[1])
 				{
 					pos[1] = loc_pos[1] + m_Op_UPML->m_StartPos[1];
-					for (loc_pos[2]=0; loc_pos[2]<m_Op_UPML->m_numLines[2]; ++loc_pos[2])
+					for (loc_pos[2] = loc_start[2]; loc_pos[2] <= loc_stop[2]; ++loc_pos[2])
 					{
 						pos[2] = loc_pos[2] + m_Op_UPML->m_StartPos[2];
 
@@ -366,14 +477,13 @@ void Engine_Ext_UPML::DoPreCurrentUpdates(int threadID)
 		}
 	default:
 		{
-			for (unsigned int lineX=0; lineX<m_numX.at(threadID); ++lineX)
+			for (loc_pos[0] = loc_start[0]; loc_pos[0] <= loc_stop[0]; ++loc_pos[0])
 			{
-				loc_pos[0]=lineX+m_start.at(threadID);
 				pos[0] = loc_pos[0] + m_Op_UPML->m_StartPos[0];
-				for (loc_pos[1]=0; loc_pos[1]<m_Op_UPML->m_numLines[1]; ++loc_pos[1])
+				for (loc_pos[1] = loc_start[1]; loc_pos[1] <= loc_stop[1]; ++loc_pos[1])
 				{
 					pos[1] = loc_pos[1] + m_Op_UPML->m_StartPos[1];
-					for (loc_pos[2]=0; loc_pos[2]<m_Op_UPML->m_numLines[2]; ++loc_pos[2])
+					for (loc_pos[2] = loc_start[2]; loc_pos[2] <= loc_stop[2]; ++loc_pos[2])
 					{
 						pos[2] = loc_pos[2] + m_Op_UPML->m_StartPos[2];
 
@@ -399,13 +509,47 @@ void Engine_Ext_UPML::DoPreCurrentUpdates(int threadID)
 	}
 }
 
-void Engine_Ext_UPML::DoPostCurrentUpdates(int threadID)
+void Engine_Ext_UPML::DoPreCurrentUpdates(int threadID)
 {
 	if (m_Eng==NULL)
 		return;
 	if (threadID>=m_NrThreads)
 		return;
 
+	// Calculate the start and stop lines using UPML's local
+	// coordinate system. For example, if UPML exists between
+	// (10, 10, 10) and (18, 18, 18) in the main grid, for UPML
+	// it's (0, 0, 0) to (8, 8, 8).
+
+	unsigned int loc_start[3] = {
+		0, 0, 0
+	};
+	unsigned int loc_stop[3] = {
+		m_numX.at(threadID) - 1,
+		m_Op_UPML->m_numLines[1] - 1,
+		m_Op_UPML->m_numLines[2] - 1
+	};
+
+	DoPreCurrentUpdatesKernel(loc_start, loc_stop);
+}
+
+void Engine_Ext_UPML::DoPreCurrentUpdates(int timestep, unsigned int start[3], unsigned int stop[3])
+{
+	unsigned int loc_start[3];
+	unsigned int loc_stop[3];
+
+	bool insidePML = ToLocalCoords(start, stop, loc_start, loc_stop);
+	if (!insidePML)
+	{
+		// no overlap between the current tile and UPML, do nothing.
+		return;
+	}
+
+	DoPreCurrentUpdatesKernel(loc_start, loc_stop);
+}
+
+void Engine_Ext_UPML::DoPostCurrentUpdatesKernel(unsigned int loc_start[3], unsigned int loc_stop[3])
+{
 	unsigned int pos[3];
 	unsigned int loc_pos[3];
 	FDTD_FLOAT f_help;
@@ -418,14 +562,13 @@ void Engine_Ext_UPML::DoPostCurrentUpdates(int threadID)
 	{
 	case Engine::BASIC:
 		{
-			for (unsigned int lineX=0; lineX<m_numX.at(threadID); ++lineX)
+			for (loc_pos[0] = loc_start[0]; loc_pos[0] <= loc_stop[0]; ++loc_pos[0])
 			{
-				loc_pos[0]=lineX+m_start.at(threadID);
 				pos[0] = loc_pos[0] + m_Op_UPML->m_StartPos[0];
-				for (loc_pos[1]=0; loc_pos[1]<m_Op_UPML->m_numLines[1]; ++loc_pos[1])
+				for (loc_pos[1] = loc_start[1]; loc_pos[1] <= loc_stop[1]; ++loc_pos[1])
 				{
 					pos[1] = loc_pos[1] + m_Op_UPML->m_StartPos[1];
-					for (loc_pos[2]=0; loc_pos[2]<m_Op_UPML->m_numLines[2]; ++loc_pos[2])
+					for (loc_pos[2] = loc_start[2]; loc_pos[2] <= loc_stop[2]; ++loc_pos[2])
 					{
 						pos[2] = loc_pos[2] + m_Op_UPML->m_StartPos[2];
 
@@ -448,14 +591,13 @@ void Engine_Ext_UPML::DoPostCurrentUpdates(int threadID)
 	case Engine::SSE:
 		{
 			Engine_sse* eng_sse = (Engine_sse*) m_Eng;
-			for (unsigned int lineX=0; lineX<m_numX.at(threadID); ++lineX)
+			for (loc_pos[0] = loc_start[0]; loc_pos[0] <= loc_stop[0]; ++loc_pos[0])
 			{
-				loc_pos[0]=lineX+m_start.at(threadID);
 				pos[0] = loc_pos[0] + m_Op_UPML->m_StartPos[0];
-				for (loc_pos[1]=0; loc_pos[1]<m_Op_UPML->m_numLines[1]; ++loc_pos[1])
+				for (loc_pos[1] = loc_start[1]; loc_pos[1] <= loc_stop[1]; ++loc_pos[1])
 				{
 					pos[1] = loc_pos[1] + m_Op_UPML->m_StartPos[1];
-					for (loc_pos[2]=0; loc_pos[2]<m_Op_UPML->m_numLines[2]; ++loc_pos[2])
+					for (loc_pos[2] = loc_start[2]; loc_pos[2] <= loc_stop[2]; ++loc_pos[2])
 					{
 						pos[2] = loc_pos[2] + m_Op_UPML->m_StartPos[2];
 
@@ -477,14 +619,13 @@ void Engine_Ext_UPML::DoPostCurrentUpdates(int threadID)
 		}
 	default:
 		{
-			for (unsigned int lineX=0; lineX<m_numX.at(threadID); ++lineX)
+			for (loc_pos[0] = loc_start[0]; loc_pos[0] <= loc_stop[0]; ++loc_pos[0])
 			{
-				loc_pos[0]=lineX+m_start.at(threadID);
 				pos[0] = loc_pos[0] + m_Op_UPML->m_StartPos[0];
-				for (loc_pos[1]=0; loc_pos[1]<m_Op_UPML->m_numLines[1]; ++loc_pos[1])
+				for (loc_pos[1] = loc_start[1]; loc_pos[1] <= loc_stop[1]; ++loc_pos[1])
 				{
 					pos[1] = loc_pos[1] + m_Op_UPML->m_StartPos[1];
-					for (loc_pos[2]=0; loc_pos[2]<m_Op_UPML->m_numLines[2]; ++loc_pos[2])
+					for (loc_pos[2] = loc_start[2]; loc_pos[2] <= loc_stop[2]; ++loc_pos[2])
 					{
 						pos[2] = loc_pos[2] + m_Op_UPML->m_StartPos[2];
 
@@ -505,4 +646,43 @@ void Engine_Ext_UPML::DoPostCurrentUpdates(int threadID)
 			break;
 		}
 	}
+}
+
+void Engine_Ext_UPML::DoPostCurrentUpdates(int threadID)
+{
+	if (m_Eng==NULL)
+		return;
+	if (threadID>=m_NrThreads)
+		return;
+
+	// Calculate the start and stop lines using UPML's local
+	// coordinate system. For example, if UPML exists between
+	// (10, 10, 10) and (18, 18, 18) in the main grid, for UPML
+	// it's (0, 0, 0) to (8, 8, 8).
+
+	unsigned int loc_start[3] = {
+		0, 0, 0
+	};
+	unsigned int loc_stop[3] = {
+		m_numX.at(threadID) - 1,
+		m_Op_UPML->m_numLines[1] - 1,
+		m_Op_UPML->m_numLines[2] - 1
+	};
+
+	DoPostCurrentUpdatesKernel(loc_start, loc_stop);
+}
+
+void Engine_Ext_UPML::DoPostCurrentUpdates(int timestep, unsigned int start[3], unsigned int stop[3])
+{
+	unsigned int loc_start[3];
+	unsigned int loc_stop[3];
+
+	bool insidePML = ToLocalCoords(start, stop, loc_start, loc_stop);
+	if (!insidePML)
+	{
+		// no overlap between the current tile and UPML, do nothing.
+		return;
+	}
+
+	DoPostCurrentUpdatesKernel(loc_start, loc_stop);
 }

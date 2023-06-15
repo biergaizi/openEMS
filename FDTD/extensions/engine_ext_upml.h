@@ -36,16 +36,32 @@ public:
 
 	virtual void DoPreVoltageUpdates() {Engine_Ext_UPML::DoPreVoltageUpdates(0);};
 	virtual void DoPreVoltageUpdates(int threadID);
+	virtual void DoPreVoltageUpdates(int timestep, unsigned int start[3], unsigned int stop[3]);
+
 	virtual void DoPostVoltageUpdates() {Engine_Ext_UPML::DoPostVoltageUpdates(0);};
 	virtual void DoPostVoltageUpdates(int threadID);
+	virtual void DoPostVoltageUpdates(int timestep, unsigned int start[3], unsigned int stop[3]);
 
 	virtual void DoPreCurrentUpdates() {Engine_Ext_UPML::DoPreCurrentUpdates(0);};
 	virtual void DoPreCurrentUpdates(int threadID);
+	virtual void DoPreCurrentUpdates(int timestep, unsigned int start[3], unsigned int stop[3]);
+
 	virtual void DoPostCurrentUpdates() {Engine_Ext_UPML::DoPostCurrentUpdates(0);};
 	virtual void DoPostCurrentUpdates(int threadID);
+	virtual void DoPostCurrentUpdates(int timestep, unsigned int start[3], unsigned int stop[3]);
 
 protected:
 	Operator_Ext_UPML* m_Op_UPML;
+
+	virtual bool ToLocalCoords(
+		unsigned int start[3], unsigned int stop[3],
+		unsigned int localStart[3], unsigned int localEnd[3]
+	);
+
+	virtual void DoPreVoltageUpdatesKernel(unsigned int locStart[3], unsigned int locStop[3]);
+	virtual void DoPostVoltageUpdatesKernel(unsigned int locStart[3], unsigned int locStop[3]);
+	virtual void DoPreCurrentUpdatesKernel(unsigned int locStart[3], unsigned int locStop[3]);
+	virtual void DoPostCurrentUpdatesKernel(unsigned int locStart[3], unsigned int locStop[3]);
 
 	vector<unsigned int> m_start;
 	vector<unsigned int> m_numX;
