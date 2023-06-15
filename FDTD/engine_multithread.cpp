@@ -232,63 +232,63 @@ void Engine_Multithread::NextInterval(float curr_speed)
 	}
 }
 
-void Engine_Multithread::DoPreVoltageUpdates(int threadID)
+void Engine_Multithread::DoPreVoltageUpdates(int threadID, int start[3], int end[3])
 {
 	//execute extensions in reverse order -> highest priority gets access to the voltages last
 	for (int n=m_Eng_exts.size()-1; n>=0; --n)
 	{
-		m_Eng_exts.at(n)->DoPreVoltageUpdates(threadID);
+		m_Eng_exts.at(n)->DoPreVoltageUpdates(threadID, start, end);
 		m_IterateBarrier->wait();
 	}
 
 }
 
-void Engine_Multithread::DoPostVoltageUpdates(int threadID)
+void Engine_Multithread::DoPostVoltageUpdates(int threadID, int start[3], int end[3])
 {
 	//execute extensions in normal order -> highest priority gets access to the voltages first
 	for (size_t n=0; n<m_Eng_exts.size(); ++n)
 	{
-		m_Eng_exts.at(n)->DoPostVoltageUpdates(threadID);
+		m_Eng_exts.at(n)->DoPostVoltageUpdates(threadID, start, end);
 		m_IterateBarrier->wait();
 	}
 }
 
-void Engine_Multithread::Apply2Voltages(int threadID)
+void Engine_Multithread::Apply2Voltages(int threadID, int start[3], int end[3])
 {
 	//execute extensions in normal order -> highest priority gets access to the voltages first
 	for (size_t n=0; n<m_Eng_exts.size(); ++n)
 	{
-		m_Eng_exts.at(n)->Apply2Voltages(threadID);
+		m_Eng_exts.at(n)->Apply2Voltages(threadID, start, end);
 		m_IterateBarrier->wait();
 	}
 }
 
-void Engine_Multithread::DoPreCurrentUpdates(int threadID)
+void Engine_Multithread::DoPreCurrentUpdates(int threadID, int start[3], int end[3])
 {
 	//execute extensions in reverse order -> highest priority gets access to the currents last
 	for (int n=m_Eng_exts.size()-1; n>=0; --n)
 	{
-		m_Eng_exts.at(n)->DoPreCurrentUpdates(threadID);
+		m_Eng_exts.at(n)->DoPreCurrentUpdates(threadID, start, end);
 		m_IterateBarrier->wait();
 	}
 }
 
-void Engine_Multithread::DoPostCurrentUpdates(int threadID)
+void Engine_Multithread::DoPostCurrentUpdates(int threadID, int start[3], int end[3])
 {
 	//execute extensions in normal order -> highest priority gets access to the currents first
 	for (size_t n=0; n<m_Eng_exts.size(); ++n)
 	{
-		m_Eng_exts.at(n)->DoPostCurrentUpdates(threadID);
+		m_Eng_exts.at(n)->DoPostCurrentUpdates(threadID, start, end);
 		m_IterateBarrier->wait();
 	}
 }
 
-void Engine_Multithread::Apply2Current(int threadID)
+void Engine_Multithread::Apply2Current(int threadID, int start[3], int end[3])
 {
 	//execute extensions in normal order -> highest priority gets access to the currents first
 	for (size_t n=0; n<m_Eng_exts.size(); ++n)
 	{
-		m_Eng_exts.at(n)->Apply2Current(threadID);
+		m_Eng_exts.at(n)->Apply2Current(threadID, start, end);
 		m_IterateBarrier->wait();
 	}
 }
@@ -346,7 +346,7 @@ void thread::operator()()
 		for (unsigned int iter=0; iter<m_enginePtr->m_iterTS; ++iter)
 		{
 			// pre voltage stuff...
-			m_enginePtr->DoPreVoltageUpdates(m_threadID);
+			m_enginePtr->DoPreVoltageUpdates(m_threadID, voltageStart, voltageEnd);
 
 			//voltage updates
 			m_enginePtr->UpdateVoltages(voltageStart, voltageEnd);
@@ -361,8 +361,8 @@ void thread::operator()()
 			DEBUG_TIME( m_enginePtr->m_timer_list[boost::this_thread::get_id()].push_back( timer1.elapsed() ); )
 
 			//post voltage stuff...
-			m_enginePtr->DoPostVoltageUpdates(m_threadID);
-			m_enginePtr->Apply2Voltages(m_threadID);
+			m_enginePtr->DoPostVoltageUpdates(m_threadID, voltageStart, voltageEnd);
+			m_enginePtr->Apply2Voltages(m_threadID, voltageStart, voltageEnd);
 
 #ifdef MPI_SUPPORT
 			if (m_threadID==0)
@@ -378,7 +378,7 @@ void thread::operator()()
 			DEBUG_TIME( m_enginePtr->m_timer_list[boost::this_thread::get_id()].push_back( timer1.elapsed() ); )
 
 			//pre current stuff
-			m_enginePtr->DoPreCurrentUpdates(m_threadID);
+			m_enginePtr->DoPreCurrentUpdates(m_threadID, voltageStart, voltageEnd);
 
 			//current updates
 			m_enginePtr->UpdateCurrents(currentStart, currentEnd);
@@ -391,8 +391,8 @@ void thread::operator()()
 			DEBUG_TIME( m_enginePtr->m_timer_list[boost::this_thread::get_id()].push_back( timer1.elapsed() ); )
 
 			//post current stuff
-			m_enginePtr->DoPostCurrentUpdates(m_threadID);
-			m_enginePtr->Apply2Current(m_threadID);
+			m_enginePtr->DoPostCurrentUpdates(m_threadID, voltageStart, voltageEnd);
+			m_enginePtr->Apply2Current(m_threadID, voltageStart, voltageEnd);
 
 #ifdef MPI_SUPPORT
 			if (m_threadID==0)

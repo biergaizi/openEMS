@@ -95,13 +95,13 @@ public:
 	//! Iterate \a iterTS number of timesteps
 	virtual bool IterateTS(unsigned int iterTS);
 
-	virtual void DoPreVoltageUpdates(int threadID);
-	virtual void DoPostVoltageUpdates(int threadID);
-	virtual void Apply2Voltages(int threadID);
+	virtual void DoPreVoltageUpdates(int threadID, int start[3], int end[3]);
+	virtual void DoPostVoltageUpdates(int threadID, int start[3], int end[3]);
+	virtual void Apply2Voltages(int threadID, int start[3], int end[3]);
 
-	virtual void DoPreCurrentUpdates(int threadID);
-	virtual void DoPostCurrentUpdates(int threadID);
-	virtual void Apply2Current(int threadID);
+	virtual void DoPreCurrentUpdates(int threadID, int start[3], int end[3]);
+	virtual void DoPostCurrentUpdates(int threadID, int start[3], int end[3]);
+	virtual void Apply2Current(int threadID, int start[3], int end[3]);
 
 protected:
 	Engine_Multithread(const Operator_Multithread* op);
