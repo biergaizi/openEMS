@@ -76,12 +76,105 @@ Engine_Ext_LorentzMaterial::~Engine_Ext_LorentzMaterial()
 	volt_Lor_ADE=NULL;
 }
 
-void Engine_Ext_LorentzMaterial::DoPreVoltageUpdates()
+void Engine_Ext_LorentzMaterial::InitializeTiling(
+	struct Block *blkX, int blk_x_max,
+	struct Block *blkY, int blk_y_max,
+	struct Block *blkZ, int blk_z_max
+)
+{
+	int start[3];
+	int end[3];
+
+	std::cerr << "Engine_Ext_LorentzMaterial::InitializeTiling" << std::endl;
+
+	for (int i = 0; i < blk_x_max; i++)
+	{
+		start[0] = blkX[i].start;
+		end[0] = blkX[i].end;
+
+		for (int j = 0; j < blk_y_max; j++)
+		{
+			start[1] = blkY[j].start;
+			end[1] = blkY[j].end;
+
+			for (int k = 0; k < blk_z_max; k++)
+			{
+				start[2] = blkZ[k].start;
+				end[2] = blkZ[k].end;
+
+				for (int o = 0; o < m_Order; ++o)
+				{
+					if (m_Op_Ext_Lor->m_volt_ADE_On[o]==false)
+						continue;
+
+					unsigned int **pos = m_Op_Ext_Lor->m_LM_pos[o];
+
+					m_volt_map[std::make_tuple(o, start, end)] = std::vector<int>();
+
+					for (unsigned int i=0; i<m_Op_Ext_Lor->m_LM_Count.at(o); ++i)
+					{
+						if (InsideTile(start, end, pos[0][i], pos[1][i], pos[2][i]))
+						{
+							m_volt_map[std::make_tuple(o, start, end)].push_back(i);
+						}
+					}
+				}
+
+				for (int o = 0; o < m_Order; ++o)
+				{
+					if (m_Op_Ext_Lor->m_curr_ADE_On[o]==false)
+						continue;
+
+					unsigned int **pos = m_Op_Ext_Lor->m_LM_pos[o];
+
+					m_curr_map[std::make_tuple(o, start, end)] = std::vector<int>();
+
+					for (unsigned int i=0; i<m_Op_Ext_Lor->m_LM_Count.at(o); ++i)
+					{
+						if (InsideTile(start, end, pos[0][i], pos[1][i], pos[2][i]))
+						{
+							m_curr_map[std::make_tuple(o, start, end)].push_back(i);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	std::cerr << "Engine_Ext_LorentzMaterial::InitializeTiling done" << std::endl;
+}
+
+
+// Whether the ADE cell (ade_x, ade_y, ade_z) is inside the
+// tile that is currently being processed.
+bool Engine_Ext_LorentzMaterial::InsideTile(
+	int start[3], int end[3],
+	int ade_x, int ade_y, int ade_z
+)
+{
+	int retval;
+
+	if (ade_x < start[0] || ade_x > end[0])
+		retval = false;
+	else if (ade_y < start[1] || ade_y > end[1])
+		retval = false;
+	else if (ade_z < start[2] || ade_z > end[2])
+		retval = false;
+	else
+		retval = true;
+
+	if (!retval && 0)
+	{
+		fprintf(stderr, "Dispersive: cell rejected.\n");
+	}
+	return retval;
+}
+
+void Engine_Ext_LorentzMaterial::DoPreVoltageUpdates(int threadID, int start[3], int end[3])
 {
 	for (int o=0;o<m_Order;++o)
 	{
-		if (m_Op_Ext_Lor->m_volt_ADE_On[o]==false) continue;
-
+		auto vec = m_volt_map[std::make_tuple(o, start, end)];
 		unsigned int **pos = m_Op_Ext_Lor->m_LM_pos[o];
 
 		if (m_Op_Ext_Lor->m_volt_Lor_ADE_On[o])
@@ -91,7 +184,7 @@ void Engine_Ext_LorentzMaterial::DoPreVoltageUpdates()
 			{
 			case Engine::BASIC:
 			{
-				for (unsigned int i=0; i<m_Op_Ext_Lor->m_LM_Count.at(o); ++i)
+				for (unsigned int i = 0; i < vec.size(); i++)
 				{
 					volt_Lor_ADE[o][0][i]+=m_Op_Ext_Lor->v_Lor_ADE[o][0][i]*volt_ADE[o][0][i];
 					volt_ADE[o][0][i] *= m_Op_Ext_Lor->v_int_ADE[o][0][i];
@@ -110,7 +203,7 @@ void Engine_Ext_LorentzMaterial::DoPreVoltageUpdates()
 			case Engine::SSE:
 			{
 				Engine_sse* eng_sse = (Engine_sse*)m_Eng;
-				for (unsigned int i=0; i<m_Op_Ext_Lor->m_LM_Count.at(o); ++i)
+				for (unsigned int i = 0; i < vec.size(); i++)
 				{
 					volt_Lor_ADE[o][0][i]+=m_Op_Ext_Lor->v_Lor_ADE[o][0][i]*volt_ADE[o][0][i];
 					volt_ADE[o][0][i] *= m_Op_Ext_Lor->v_int_ADE[o][0][i];
@@ -127,7 +220,7 @@ void Engine_Ext_LorentzMaterial::DoPreVoltageUpdates()
 				break;
 			}
 			default:
-				for (unsigned int i=0; i<m_Op_Ext_Lor->m_LM_Count.at(o); ++i)
+				for (unsigned int i = 0; i < vec.size(); i++)
 				{
 					volt_Lor_ADE[o][0][i]+=m_Op_Ext_Lor->v_Lor_ADE[o][0][i]*volt_ADE[o][0][i];
 					volt_ADE[o][0][i] *= m_Op_Ext_Lor->v_int_ADE[o][0][i];
@@ -151,7 +244,7 @@ void Engine_Ext_LorentzMaterial::DoPreVoltageUpdates()
 			{
 			case Engine::BASIC:
 			{
-				for (unsigned int i=0; i<m_Op_Ext_Lor->m_LM_Count.at(o); ++i)
+				for (unsigned int i = 0; i < vec.size(); i++)
 				{
 					volt_ADE[o][0][i] *= m_Op_Ext_Lor->v_int_ADE[o][0][i];
 					volt_ADE[o][0][i] += m_Op_Ext_Lor->v_ext_ADE[o][0][i] * m_Eng->Engine::GetVolt(0,pos[0][i],pos[1][i],pos[2][i]);
@@ -167,7 +260,7 @@ void Engine_Ext_LorentzMaterial::DoPreVoltageUpdates()
 			case Engine::SSE:
 			{
 				Engine_sse* eng_sse = (Engine_sse*)m_Eng;
-				for (unsigned int i=0; i<m_Op_Ext_Lor->m_LM_Count.at(o); ++i)
+				for (unsigned int i = 0; i < vec.size(); i++)
 				{
 					volt_ADE[o][0][i] *= m_Op_Ext_Lor->v_int_ADE[o][0][i];
 					volt_ADE[o][0][i] += m_Op_Ext_Lor->v_ext_ADE[o][0][i] * eng_sse->Engine_sse::GetVolt(0,pos[0][i],pos[1][i],pos[2][i]);
@@ -181,7 +274,7 @@ void Engine_Ext_LorentzMaterial::DoPreVoltageUpdates()
 				break;
 			}
 			default:
-				for (unsigned int i=0; i<m_Op_Ext_Lor->m_LM_Count.at(o); ++i)
+				for (unsigned int i = 0; i < vec.size(); i++)
 				{
 					volt_ADE[o][0][i] *= m_Op_Ext_Lor->v_int_ADE[o][0][i];
 					volt_ADE[o][0][i] += m_Op_Ext_Lor->v_ext_ADE[o][0][i] * m_Eng->GetVolt(0,pos[0][i],pos[1][i],pos[2][i]);
@@ -198,22 +291,20 @@ void Engine_Ext_LorentzMaterial::DoPreVoltageUpdates()
 	}
 }
 
-void Engine_Ext_LorentzMaterial::DoPreCurrentUpdates()
+void Engine_Ext_LorentzMaterial::DoPreCurrentUpdates(int threadID, int start[3], int end[3])
 {
 	for (int o=0;o<m_Order;++o)
 	{
-		if (m_Op_Ext_Lor->m_curr_ADE_On[o]==false) continue;
-
+		auto vec = m_curr_map[std::make_tuple(o, start, end)];
 		unsigned int **pos = m_Op_Ext_Lor->m_LM_pos[o];
 
 		if (m_Op_Ext_Lor->m_curr_Lor_ADE_On[o])
 		{
-			//switch for different engine types to access faster inline engine functions
 			switch (m_Eng->GetType())
 			{
 			case Engine::BASIC:
 			{
-				for (unsigned int i=0; i<m_Op_Ext_Lor->m_LM_Count.at(o); ++i)
+				for (unsigned int i = 0; i < vec.size(); i++)
 				{
 					curr_Lor_ADE[o][0][i]+=m_Op_Ext_Lor->i_Lor_ADE[o][0][i]*curr_ADE[o][0][i];
 					curr_ADE[o][0][i] *= m_Op_Ext_Lor->i_int_ADE[o][0][i];
@@ -232,7 +323,7 @@ void Engine_Ext_LorentzMaterial::DoPreCurrentUpdates()
 			case Engine::SSE:
 			{
 				Engine_sse* eng_sse = (Engine_sse*)m_Eng;
-				for (unsigned int i=0; i<m_Op_Ext_Lor->m_LM_Count.at(o); ++i)
+				for (unsigned int i = 0; i < vec.size(); i++)
 				{
 					curr_Lor_ADE[o][0][i]+=m_Op_Ext_Lor->i_Lor_ADE[o][0][i]*curr_ADE[o][0][i];
 					curr_ADE[o][0][i] *= m_Op_Ext_Lor->i_int_ADE[o][0][i];
@@ -249,7 +340,7 @@ void Engine_Ext_LorentzMaterial::DoPreCurrentUpdates()
 				break;
 			}
 			default:
-				for (unsigned int i=0; i<m_Op_Ext_Lor->m_LM_Count.at(o); ++i)
+				for (unsigned int i = 0; i < vec.size(); i++)
 				{
 					curr_Lor_ADE[o][0][i]+=m_Op_Ext_Lor->i_Lor_ADE[o][0][i]*curr_ADE[o][0][i];
 					curr_ADE[o][0][i] *= m_Op_Ext_Lor->i_int_ADE[o][0][i];
@@ -273,7 +364,7 @@ void Engine_Ext_LorentzMaterial::DoPreCurrentUpdates()
 			{
 			case Engine::BASIC:
 			{
-				for (unsigned int i=0; i<m_Op_Ext_Lor->m_LM_Count.at(o); ++i)
+				for (unsigned int i = 0; i < vec.size(); i++)
 				{
 					curr_ADE[o][0][i] *= m_Op_Ext_Lor->i_int_ADE[o][0][i];
 					curr_ADE[o][0][i] += m_Op_Ext_Lor->i_ext_ADE[o][0][i] * m_Eng->Engine::GetCurr(0,pos[0][i],pos[1][i],pos[2][i]);
@@ -289,7 +380,7 @@ void Engine_Ext_LorentzMaterial::DoPreCurrentUpdates()
 			case Engine::SSE:
 			{
 				Engine_sse* eng_sse = (Engine_sse*)m_Eng;
-				for (unsigned int i=0; i<m_Op_Ext_Lor->m_LM_Count.at(o); ++i)
+				for (unsigned int i = 0; i < vec.size(); i++)
 				{
 					curr_ADE[o][0][i] *= m_Op_Ext_Lor->i_int_ADE[o][0][i];
 					curr_ADE[o][0][i] += m_Op_Ext_Lor->i_ext_ADE[o][0][i] * eng_sse->Engine_sse::GetCurr(0,pos[0][i],pos[1][i],pos[2][i]);
@@ -303,7 +394,7 @@ void Engine_Ext_LorentzMaterial::DoPreCurrentUpdates()
 				break;
 			}
 			default:
-				for (unsigned int i=0; i<m_Op_Ext_Lor->m_LM_Count.at(o); ++i)
+				for (unsigned int i = 0; i < vec.size(); i++)
 				{
 					curr_ADE[o][0][i] *= m_Op_Ext_Lor->i_int_ADE[o][0][i];
 					curr_ADE[o][0][i] += m_Op_Ext_Lor->i_ext_ADE[o][0][i] * m_Eng->GetCurr(0,pos[0][i],pos[1][i],pos[2][i]);
@@ -319,4 +410,3 @@ void Engine_Ext_LorentzMaterial::DoPreCurrentUpdates()
 		}
 	}
 }
-

@@ -19,6 +19,7 @@
 #define ENGINE_EXT_LORENTZMATERIAL_H
 
 #include "engine_ext_dispersive.h"
+#include "tools/TileMap.h"
 
 class Operator_Ext_LorentzMaterial;
 
@@ -28,12 +29,19 @@ public:
 	Engine_Ext_LorentzMaterial(Operator_Ext_LorentzMaterial* op_ext_lorentz);
 	virtual ~Engine_Ext_LorentzMaterial();
 
-	virtual void DoPreVoltageUpdates();
+	virtual void DoPreVoltageUpdates(int threadID, int start[3], int end[3]);
 
-	virtual void DoPreCurrentUpdates();
+	virtual void DoPreCurrentUpdates(int threadID, int start[3], int end[3]);
+
+	void InitializeTiling(
+		struct Block *blkX, int blk_x_max,
+		struct Block *blkY, int blk_y_max,
+		struct Block *blkZ, int blk_z_max
+	);
 
 protected:
 	Operator_Ext_LorentzMaterial* m_Op_Ext_Lor;
+	bool InsideTile(int start[3], int end[3], int ade_x, int ade_y, int ade_z);
 
 	//! ADE Lorentz voltages
 	// Array setup: volt_Lor_ADE[N_order][direction][mesh_pos]
@@ -43,6 +51,8 @@ protected:
 	// Array setup: curr_Lor_ADE[N_order][direction][mesh_pos]
 	FDTD_FLOAT ***curr_Lor_ADE;
 
+	TileMap m_volt_map;
+	TileMap m_curr_map;
 };
 
 #endif // ENGINE_EXT_LORENTZMATERIAL_H
