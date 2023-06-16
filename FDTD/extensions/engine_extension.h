@@ -70,6 +70,12 @@ public:
 	//! Set the priority for this extension
 	virtual void SetPriority(int val) {m_Priority=val;}
 
+	virtual void InitializeTiling(
+		struct Block *blkX, int blk_x_max,
+		struct Block *blkY, int blk_y_max,
+		struct Block *blkZ, int blk_z_max
+	) {}
+
 	virtual bool operator< (const Engine_Extension& other);
 
 	virtual std::string GetExtensionName() const;
