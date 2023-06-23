@@ -19,7 +19,6 @@
 #define ENGINE_EXT_LORENTZMATERIAL_H
 
 #include "engine_ext_dispersive.h"
-#include "tools/TileMap.h"
 
 class Operator_Ext_LorentzMaterial;
 
@@ -33,11 +32,7 @@ public:
 
 	virtual void DoPreCurrentUpdates(int threadID, int start[3], int end[3]);
 
-	void InitializeTiling(
-		struct Block *blkX, int blk_x_max,
-		struct Block *blkY, int blk_y_max,
-		struct Block *blkZ, int blk_z_max
-	);
+	virtual void InitializeTiling(std::vector<Range3D> tiles);
 
 protected:
 	Operator_Ext_LorentzMaterial* m_Op_Ext_Lor;
@@ -51,6 +46,7 @@ protected:
 	// Array setup: curr_Lor_ADE[N_order][direction][mesh_pos]
 	FDTD_FLOAT ***curr_Lor_ADE;
 
+private:
 	TileMap m_volt_map;
 	TileMap m_curr_map;
 };

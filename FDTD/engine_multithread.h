@@ -20,6 +20,7 @@
 
 #include "operator_multithread.h"
 #include "engine_sse_compressed.h"
+#include "tools/tiling.h"
 
 #include <boost/thread.hpp>
 #include <boost/fusion/include/list.hpp>
@@ -69,12 +70,13 @@ protected:
 class thread
 {
 public:
-	thread( Engine_Multithread* ptr, unsigned int start, unsigned int stop, unsigned int stop_h, unsigned int threadID );
+	thread( Engine_Multithread* ptr, std::vector<Range3D> tiles, unsigned int threadID );
 	void operator()();
-
 protected:
 	unsigned int m_start, m_stop, m_stop_h, m_threadID;
+	std::vector<Range3D> m_tiles;
 	Engine_Multithread *m_enginePtr;
+	void iterateTimesteps(std::vector<Range3D>&);
 };
 } // namespace
 
@@ -102,6 +104,8 @@ public:
 	virtual void DoPreCurrentUpdates(int threadID, int start[3], int end[3]);
 	virtual void DoPostCurrentUpdates(int threadID, int start[3], int end[3]);
 	virtual void Apply2Current(int threadID, int start[3], int end[3]);
+
+	virtual void InitializeTiling(std::vector<Range3D> tiles);
 
 protected:
 	Engine_Multithread(const Operator_Multithread* op);

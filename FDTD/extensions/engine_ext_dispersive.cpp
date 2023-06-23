@@ -75,6 +75,59 @@ Engine_Ext_Dispersive::~Engine_Ext_Dispersive()
 	volt_ADE=NULL;
 }
 
+void Engine_Ext_Dispersive::InitializeTiling(std::vector<Range3D> tiles)
+{
+	int start[3];
+	int end[3];
+
+	std::cerr << "Engine_Ext_Dispersive::InitializeTiling" << std::endl;
+
+	for (auto& tile : tiles)
+	{
+		for (int o = 0; o < m_Order; ++o)
+		{
+			if (m_Op_Ext_Disp->m_volt_ADE_On[o]==false)
+				continue;
+
+			unsigned int **pos = m_Op_Ext_Disp->m_LM_pos[o];
+			int* start = tile.voltageStart;
+			int* end = tile.voltageStop;
+
+			m_volt_map[std::make_tuple(o, start, end)] = std::vector<int>();
+
+			for (unsigned int i=0; i<m_Op_Ext_Disp->m_LM_Count.at(o); ++i)
+			{
+				if (InsideTile(start, end, pos[0][i], pos[1][i], pos[2][i]))
+				{
+					m_volt_map[std::make_tuple(o, start, end)].push_back(i);
+				}
+			}
+		}
+
+		for (int o = 0; o < m_Order; ++o)
+		{
+			if (m_Op_Ext_Disp->m_curr_ADE_On[o]==false)
+				continue;
+
+			unsigned int **pos = m_Op_Ext_Disp->m_LM_pos[o];
+			int* start = tile.currentStart;
+			int* end = tile.currentStop;
+
+			m_curr_map[std::make_tuple(o, start, end)] = std::vector<int>();
+
+			for (unsigned int i=0; i<m_Op_Ext_Disp->m_LM_Count.at(o); ++i)
+			{
+				if (InsideTile(start, end, pos[0][i], pos[1][i], pos[2][i]))
+				{
+					m_curr_map[std::make_tuple(o, start, end)].push_back(i);
+				}
+			}
+		}
+	}
+
+	std::cerr << "Engine_Ext_Dispersive::InitializeTiling done" << std::endl;
+}
+
 // Whether the ADE cell (ade_x, ade_y, ade_z) is inside the
 // tile that is currently being processed.
 bool Engine_Ext_Dispersive::InsideTile(
@@ -106,6 +159,7 @@ void Engine_Ext_Dispersive::Apply2Voltages(int threadID, int start[3], int end[3
 	{
 		if (m_Op_Ext_Disp->m_volt_ADE_On[o]==false) continue;
 
+		auto vec = m_volt_map[std::make_tuple(o, start, end)];
 		unsigned int **pos = m_Op_Ext_Disp->m_LM_pos[o];
 
 		//switch for different engine types to access faster inline engine functions
@@ -113,13 +167,8 @@ void Engine_Ext_Dispersive::Apply2Voltages(int threadID, int start[3], int end[3
 		{
 		case Engine::BASIC:
 		{
-			for (unsigned int i=0; i<m_Op_Ext_Disp->m_LM_Count.at(o); ++i)
+			for (unsigned int i = 0; i < vec.size(); i++)
 			{
-				if (!InsideTile(start, end, pos[0][i], pos[1][i], pos[2][i]))
-				{
-					continue;
-				}
-
 				m_Eng->Engine::SetVolt(0,pos[0][i],pos[1][i],pos[2][i], m_Eng->Engine::GetVolt(0,pos[0][i],pos[1][i],pos[2][i]) - volt_ADE[o][0][i]);
 				m_Eng->Engine::SetVolt(1,pos[0][i],pos[1][i],pos[2][i], m_Eng->Engine::GetVolt(1,pos[0][i],pos[1][i],pos[2][i]) - volt_ADE[o][1][i]);
 				m_Eng->Engine::SetVolt(2,pos[0][i],pos[1][i],pos[2][i], m_Eng->Engine::GetVolt(2,pos[0][i],pos[1][i],pos[2][i]) - volt_ADE[o][2][i]);
@@ -129,13 +178,8 @@ void Engine_Ext_Dispersive::Apply2Voltages(int threadID, int start[3], int end[3
 		case Engine::SSE:
 		{
 			Engine_sse* eng_sse = (Engine_sse*)m_Eng;
-			for (unsigned int i=0; i<m_Op_Ext_Disp->m_LM_Count.at(o); ++i)
+			for (unsigned int i = 0; i < vec.size(); i++)
 			{
-				if (!InsideTile(start, end, pos[0][i], pos[1][i], pos[2][i]))
-				{
-					continue;
-				}
-
 				eng_sse->Engine_sse::SetVolt(0,pos[0][i],pos[1][i],pos[2][i], eng_sse->Engine_sse::GetVolt(0,pos[0][i],pos[1][i],pos[2][i]) - volt_ADE[o][0][i]);
 				eng_sse->Engine_sse::SetVolt(1,pos[0][i],pos[1][i],pos[2][i], eng_sse->Engine_sse::GetVolt(1,pos[0][i],pos[1][i],pos[2][i]) - volt_ADE[o][1][i]);
 				eng_sse->Engine_sse::SetVolt(2,pos[0][i],pos[1][i],pos[2][i], eng_sse->Engine_sse::GetVolt(2,pos[0][i],pos[1][i],pos[2][i]) - volt_ADE[o][2][i]);
@@ -143,13 +187,8 @@ void Engine_Ext_Dispersive::Apply2Voltages(int threadID, int start[3], int end[3
 			break;
 		}
 		default:
-			for (unsigned int i=0; i<m_Op_Ext_Disp->m_LM_Count.at(o); ++i)
+			for (unsigned int i = 0; i < vec.size(); i++)
 			{
-				if (!InsideTile(start, end, pos[0][i], pos[1][i], pos[2][i]))
-				{
-					continue;
-				}
-
 				m_Eng->SetVolt(0,pos[0][i],pos[1][i],pos[2][i], m_Eng->GetVolt(0,pos[0][i],pos[1][i],pos[2][i]) - volt_ADE[o][0][i]);
 				m_Eng->SetVolt(1,pos[0][i],pos[1][i],pos[2][i], m_Eng->GetVolt(1,pos[0][i],pos[1][i],pos[2][i]) - volt_ADE[o][1][i]);
 				m_Eng->SetVolt(2,pos[0][i],pos[1][i],pos[2][i], m_Eng->GetVolt(2,pos[0][i],pos[1][i],pos[2][i]) - volt_ADE[o][2][i]);
@@ -165,6 +204,7 @@ void Engine_Ext_Dispersive::Apply2Current(int threadID, int start[3], int end[3]
 	{
 		if (m_Op_Ext_Disp->m_curr_ADE_On[o]==false) continue;
 
+		auto vec = m_curr_map[std::make_tuple(o, start, end)];
 		unsigned int **pos = m_Op_Ext_Disp->m_LM_pos[o];
 
 		//switch for different engine types to access faster inline engine functions
@@ -172,13 +212,8 @@ void Engine_Ext_Dispersive::Apply2Current(int threadID, int start[3], int end[3]
 		{
 		case Engine::BASIC:
 		{
-			for (unsigned int i=0; i<m_Op_Ext_Disp->m_LM_Count.at(o); ++i)
+			for (unsigned int i = 0; i < vec.size(); i++)
 			{
-				if (!InsideTile(start, end, pos[0][i], pos[1][i], pos[2][i]))
-				{
-					continue;
-				}
-
 				m_Eng->Engine::SetCurr(0,pos[0][i],pos[1][i],pos[2][i], m_Eng->Engine::GetCurr(0,pos[0][i],pos[1][i],pos[2][i]) - curr_ADE[o][0][i]);
 				m_Eng->Engine::SetCurr(1,pos[0][i],pos[1][i],pos[2][i], m_Eng->Engine::GetCurr(1,pos[0][i],pos[1][i],pos[2][i]) - curr_ADE[o][1][i]);
 				m_Eng->Engine::SetCurr(2,pos[0][i],pos[1][i],pos[2][i], m_Eng->Engine::GetCurr(2,pos[0][i],pos[1][i],pos[2][i]) - curr_ADE[o][2][i]);
@@ -188,13 +223,8 @@ void Engine_Ext_Dispersive::Apply2Current(int threadID, int start[3], int end[3]
 		case Engine::SSE:
 		{
 			Engine_sse* eng_sse = (Engine_sse*)m_Eng;
-			for (unsigned int i=0; i<m_Op_Ext_Disp->m_LM_Count.at(o); ++i)
+			for (unsigned int i = 0; i < vec.size(); i++)
 			{
-				if (!InsideTile(start, end, pos[0][i], pos[1][i], pos[2][i]))
-				{
-					continue;
-				}
-
 				eng_sse->Engine_sse::SetCurr(0,pos[0][i],pos[1][i],pos[2][i], eng_sse->Engine_sse::GetCurr(0,pos[0][i],pos[1][i],pos[2][i]) - curr_ADE[o][0][i]);
 				eng_sse->Engine_sse::SetCurr(1,pos[0][i],pos[1][i],pos[2][i], eng_sse->Engine_sse::GetCurr(1,pos[0][i],pos[1][i],pos[2][i]) - curr_ADE[o][1][i]);
 				eng_sse->Engine_sse::SetCurr(2,pos[0][i],pos[1][i],pos[2][i], eng_sse->Engine_sse::GetCurr(2,pos[0][i],pos[1][i],pos[2][i]) - curr_ADE[o][2][i]);
@@ -202,13 +232,8 @@ void Engine_Ext_Dispersive::Apply2Current(int threadID, int start[3], int end[3]
 			break;
 		}
 		default:
-			for (unsigned int i=0; i<m_Op_Ext_Disp->m_LM_Count.at(o); ++i)
+			for (unsigned int i = 0; i < vec.size(); i++)
 			{
-				if (!InsideTile(start, end, pos[0][i], pos[1][i], pos[2][i]))
-				{
-					continue;
-				}
-
 				m_Eng->SetCurr(0,pos[0][i],pos[1][i],pos[2][i], m_Eng->GetCurr(0,pos[0][i],pos[1][i],pos[2][i]) - curr_ADE[o][0][i]);
 				m_Eng->SetCurr(1,pos[0][i],pos[1][i],pos[2][i], m_Eng->GetCurr(1,pos[0][i],pos[1][i],pos[2][i]) - curr_ADE[o][1][i]);
 				m_Eng->SetCurr(2,pos[0][i],pos[1][i],pos[2][i], m_Eng->GetCurr(2,pos[0][i],pos[1][i],pos[2][i]) - curr_ADE[o][2][i]);

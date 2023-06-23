@@ -89,6 +89,11 @@ void Engine_Extension::Apply2Current(int threadID, int start[3], int end[3])
 		Apply2Current();
 }
 
+void Engine_Extension::InitializeTiling(std::vector<Range3D> tiles)
+{
+	//if this method gets called the derived extension obviously doesn't support tiling...
+}
+
 bool Engine_Extension::operator< (const Engine_Extension& other)
 {
 	return (GetPriority()<other.GetPriority());

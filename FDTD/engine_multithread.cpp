@@ -37,6 +37,8 @@
 #include <xmmintrin.h>
 #endif
 
+#include "tools/TileMap.h"
+
 //! \brief construct an Engine_Multithread instance
 //! it's the responsibility of the caller to free the returned pointer
 Engine_Multithread* Engine_Multithread::New(const Operator_Multithread* op, unsigned int numThreads)
@@ -176,29 +178,49 @@ void Engine_Multithread::changeNumThreads(unsigned int numThreads)
 	m_MPI_Barrier = 0;
 #endif
 
+	int blkSizes[3] = {
+		m_Op_MT->GetNumberOfLines(0),
+		m_Op_MT->GetNumberOfLines(1),
+		m_Op_MT->GetNumberOfLines(2)
+	};
+
+	auto tilesPerThreadPerStage = computeRectangularTiles3D((int*) numLines, blkSizes, m_numThreads);
+	auto tilesPerThread = tilesPerThreadPerStage[0];  // assumed to be one stage only
+
+	std::vector<Range3D> tilesForAllThreads;
+	for (auto& tiles : tilesPerThread)
+	{
+		for (auto& tile : tiles)
+		{
+			tilesForAllThreads.push_back(tile);
+		}
+	}
+
 	m_thread_group = new boost::thread_group();
 	for (unsigned int n=0; n<m_numThreads; n++)
 	{
-		unsigned int start = m_Start_Lines.at(n);
-		unsigned int stop = m_Stop_Lines.at(n);
-		unsigned int stop_h = stop;
+		//unsigned int start = m_Start_Lines.at(n);
+		//unsigned int stop = m_Stop_Lines.at(n);
+		//unsigned int stop_h = stop;
 		if (n == m_numThreads-1)
 		{
 			// last thread
-			stop_h = stop-1;
-			if (g_settings.GetVerboseLevel()>0)
-				cout << stop-start+1 << ")" << endl;
+			//stop_h = stop-1;
+			if (g_settings.GetVerboseLevel()>0) {}
+				//cout << stop-start+1 << ")" << endl;
 		}
 		else
-			if (g_settings.GetVerboseLevel()>0)
-				cout << stop-start+1 << ";";
+			if (g_settings.GetVerboseLevel()>0) {}
+				//cout << stop-start+1 << ";";
 //		NS_Engine_Multithread::DBG().cout() << "###DEBUG## Thread " << n << ": start=" << start << " stop=" << stop  << " stop_h=" << stop_h << std::endl;
-		boost::thread *t = new boost::thread( NS_Engine_Multithread::thread(this,start,stop,stop_h,n) );
+		boost::thread *t = new boost::thread( NS_Engine_Multithread::thread(this,tilesPerThread[n],n) );
 		m_thread_group->add_thread( t );
 	}
 
 	for (size_t n=0; n<m_Eng_exts.size(); ++n)
 		m_Eng_exts.at(n)->SetNumberOfThreads(m_numThreads);
+
+	InitializeTiling(tilesForAllThreads);
 }
 
 bool Engine_Multithread::IterateTS(unsigned int iterTS)
@@ -238,7 +260,7 @@ void Engine_Multithread::DoPreVoltageUpdates(int threadID, int start[3], int end
 	for (int n=m_Eng_exts.size()-1; n>=0; --n)
 	{
 		m_Eng_exts.at(n)->DoPreVoltageUpdates(threadID, start, end);
-		m_IterateBarrier->wait();
+		//m_IterateBarrier->wait();
 	}
 
 }
@@ -249,7 +271,7 @@ void Engine_Multithread::DoPostVoltageUpdates(int threadID, int start[3], int en
 	for (size_t n=0; n<m_Eng_exts.size(); ++n)
 	{
 		m_Eng_exts.at(n)->DoPostVoltageUpdates(threadID, start, end);
-		m_IterateBarrier->wait();
+		//m_IterateBarrier->wait();
 	}
 }
 
@@ -259,7 +281,7 @@ void Engine_Multithread::Apply2Voltages(int threadID, int start[3], int end[3])
 	for (size_t n=0; n<m_Eng_exts.size(); ++n)
 	{
 		m_Eng_exts.at(n)->Apply2Voltages(threadID, start, end);
-		m_IterateBarrier->wait();
+		//m_IterateBarrier->wait();
 	}
 }
 
@@ -269,7 +291,7 @@ void Engine_Multithread::DoPreCurrentUpdates(int threadID, int start[3], int end
 	for (int n=m_Eng_exts.size()-1; n>=0; --n)
 	{
 		m_Eng_exts.at(n)->DoPreCurrentUpdates(threadID, start, end);
-		m_IterateBarrier->wait();
+		//m_IterateBarrier->wait();
 	}
 }
 
@@ -279,7 +301,7 @@ void Engine_Multithread::DoPostCurrentUpdates(int threadID, int start[3], int en
 	for (size_t n=0; n<m_Eng_exts.size(); ++n)
 	{
 		m_Eng_exts.at(n)->DoPostCurrentUpdates(threadID, start, end);
-		m_IterateBarrier->wait();
+		//m_IterateBarrier->wait();
 	}
 }
 
@@ -289,7 +311,19 @@ void Engine_Multithread::Apply2Current(int threadID, int start[3], int end[3])
 	for (size_t n=0; n<m_Eng_exts.size(); ++n)
 	{
 		m_Eng_exts.at(n)->Apply2Current(threadID, start, end);
-		m_IterateBarrier->wait();
+		//m_IterateBarrier->wait();
+	}
+}
+
+void Engine_Multithread::InitializeTiling(std::vector<Range3D> tiles)
+{
+	for (size_t n=0; n<m_Eng_exts.size(); ++n)
+	{
+		std::cerr << "Using ";
+		std::cerr << m_Eng_exts.at(n)->GetExtensionName();
+		std::cerr << std::endl;
+
+		m_Eng_exts.at(n)->InitializeTiling(tiles);
 	}
 }
 
@@ -299,13 +333,13 @@ void Engine_Multithread::Apply2Current(int threadID, int start[3], int end[3])
 namespace NS_Engine_Multithread
 {
 
-thread::thread( Engine_Multithread* ptr, unsigned int start, unsigned int stop, unsigned int stop_h, unsigned int threadID )
+thread::thread( Engine_Multithread* ptr, std::vector<Range3D> tiles, unsigned int threadID )
 {
 	m_enginePtr = ptr;
-	m_start = start;
-	m_stop = stop;
-	m_stop_h = stop_h;
+	m_tiles = tiles;
 	m_threadID = threadID;
+
+	fprintf(stderr, "Tiles - Thread: %d / Tiles: %d\n", threadID, tiles.size());
 }
 
 void thread::operator()()
@@ -319,6 +353,10 @@ void thread::operator()()
 	unsigned int newMXCSR = oldMXCSR | 0x8040; // set DAZ and FZ bits
 	_mm_setcsr( newMXCSR ); //write the new MXCSR setting to the MXCSR
 #endif
+
+	auto op = m_enginePtr->m_Op_MT;
+
+	//fprintf(stderr, "Tiles - X: %d / Y: %d / Z: %d\n", blk_x_max, blk_y_max, blk_z_max);
 
 	while (!m_enginePtr->m_stopThreads)
 	{
@@ -335,74 +373,9 @@ void thread::operator()()
 
 		DEBUG_TIME( Timer timer1 );
 
-		auto op = m_enginePtr->m_Op_MT;
-
-		int voltageStart[3] = {m_start, 0, 0};
-		int voltageEnd[3]   = {m_stop, op->GetNumberOfLines(1) - 1, op->GetNumberOfLines(2) - 1};
-
-		int currentStart[3] = {m_start, 0, 0};
-		int currentEnd[3]   = {m_stop_h, op->GetNumberOfLines(1) - 2, op->GetNumberOfLines(2) - 2};
-
 		for (unsigned int iter=0; iter<m_enginePtr->m_iterTS; ++iter)
 		{
-			// pre voltage stuff...
-			m_enginePtr->DoPreVoltageUpdates(m_threadID, voltageStart, voltageEnd);
-
-			//voltage updates
-			m_enginePtr->UpdateVoltages(voltageStart, voltageEnd);
-
-			// record time
-			DEBUG_TIME( m_enginePtr->m_timer_list[boost::this_thread::get_id()].push_back( timer1.elapsed() ); )
-
-			//cout << "Thread " << boost::this_thread::get_id() << " m_barrier1 waiting..." << endl;
-			m_enginePtr->m_IterateBarrier->wait();
-
-			// record time
-			DEBUG_TIME( m_enginePtr->m_timer_list[boost::this_thread::get_id()].push_back( timer1.elapsed() ); )
-
-			//post voltage stuff...
-			m_enginePtr->DoPostVoltageUpdates(m_threadID, voltageStart, voltageEnd);
-			m_enginePtr->Apply2Voltages(m_threadID, voltageStart, voltageEnd);
-
-#ifdef MPI_SUPPORT
-			if (m_threadID==0)
-			{
-				if (m_enginePtr->m_MPI_Barrier)
-					m_enginePtr->m_MPI_Barrier->wait();
-				m_enginePtr->SendReceiveVoltages();
-			}
-			m_enginePtr->m_IterateBarrier->wait();
-#endif
-
-			// record time
-			DEBUG_TIME( m_enginePtr->m_timer_list[boost::this_thread::get_id()].push_back( timer1.elapsed() ); )
-
-			//pre current stuff
-			m_enginePtr->DoPreCurrentUpdates(m_threadID, voltageStart, voltageEnd);
-
-			//current updates
-			m_enginePtr->UpdateCurrents(currentStart, currentEnd);
-
-			// record time
-			DEBUG_TIME( m_enginePtr->m_timer_list[boost::this_thread::get_id()].push_back( timer1.elapsed() ); )
-			m_enginePtr->m_IterateBarrier->wait();
-
-			// record time
-			DEBUG_TIME( m_enginePtr->m_timer_list[boost::this_thread::get_id()].push_back( timer1.elapsed() ); )
-
-			//post current stuff
-			m_enginePtr->DoPostCurrentUpdates(m_threadID, voltageStart, voltageEnd);
-			m_enginePtr->Apply2Current(m_threadID, voltageStart, voltageEnd);
-
-#ifdef MPI_SUPPORT
-			if (m_threadID==0)
-			{
-				if (m_enginePtr->m_MPI_Barrier)
-					m_enginePtr->m_MPI_Barrier->wait();
-				m_enginePtr->SendReceiveCurrents();
-			}
-			m_enginePtr->m_IterateBarrier->wait();
-#endif
+			iterateTimesteps(m_tiles);
 
 			if (m_threadID == 0)
 				++m_enginePtr->numTS; // only the first thread increments numTS
@@ -414,5 +387,80 @@ void thread::operator()()
 	//DBG().cout() << "Thread " << m_threadID << " (" << boost::this_thread::get_id() << ") finished." << endl;
 }
 
-} // namespace
+void thread::iterateTimesteps(std::vector<Range3D>& tiles)
+{
+	auto op = m_enginePtr->m_Op_MT;
 
+	for (auto& tile : tiles)
+	{
+		// pre voltage stuff...
+		m_enginePtr->DoPreVoltageUpdates(m_threadID, tile.voltageStart, tile.voltageStop);
+
+		//voltage updates
+		//fprintf(stderr, "UpdateVoltages (%d %d) (%d %d) (%d %d)\n",
+		//	tile.voltageStart[0], tile.voltageStop[0],
+		//	tile.voltageStart[1], tile.voltageStop[1],
+		//	tile.voltageStart[2], tile.voltageStop[2]
+		//);
+		m_enginePtr->UpdateVoltages(tile.voltageStart, tile.voltageStop);
+
+		// record time
+		DEBUG_TIME( m_enginePtr->m_timer_list[boost::this_thread::get_id()].push_back( timer1.elapsed() ); )
+
+		//post voltage stuff...
+		m_enginePtr->DoPostVoltageUpdates(m_threadID, tile.voltageStart, tile.voltageStop);
+		m_enginePtr->Apply2Voltages(m_threadID, tile.voltageStart, tile.voltageStop);
+	}
+
+	//cout << "Thread " << boost::this_thread::get_id() << " m_barrier1 waiting..." << endl;
+	DEBUG_TIME( m_enginePtr->m_timer_list[boost::this_thread::get_id()].push_back( timer1.elapsed() ); )
+	m_enginePtr->m_IterateBarrier->wait();
+
+#ifdef MPI_SUPPORT
+	if (m_threadID==0)
+	{
+		if (m_enginePtr->m_MPI_Barrier)
+			m_enginePtr->m_MPI_Barrier->wait();
+		m_enginePtr->SendReceiveVoltages();
+	}
+	m_enginePtr->m_IterateBarrier->wait();
+#endif
+
+	// record time
+	DEBUG_TIME( m_enginePtr->m_timer_list[boost::this_thread::get_id()].push_back( timer1.elapsed() ); )
+
+	for (auto& tile : tiles) {
+		//pre current stuff
+		m_enginePtr->DoPreCurrentUpdates(m_threadID, tile.currentStart, tile.currentStop);
+
+		//current updates
+		if (tile.currentStop[2] > op->GetNumberOfLines(2) - 2)
+		{
+			int stop[3] = {tile.currentStop[0], tile.currentStop[1], op->GetNumberOfLines(2) - 2};
+			m_enginePtr->UpdateCurrents(tile.currentStart, stop);
+		}
+
+		// record time
+		DEBUG_TIME( m_enginePtr->m_timer_list[boost::this_thread::get_id()].push_back( timer1.elapsed() ); )
+
+		//post current stuff
+		m_enginePtr->DoPostCurrentUpdates(m_threadID, tile.currentStart, tile.currentStop);
+		m_enginePtr->Apply2Current(m_threadID, tile.currentStart, tile.currentStop);
+	}
+
+	// record time
+	DEBUG_TIME( m_enginePtr->m_timer_list[boost::this_thread::get_id()].push_back( timer1.elapsed() ); )
+	m_enginePtr->m_IterateBarrier->wait();
+
+#ifdef MPI_SUPPORT
+	if (m_threadID==0)
+	{
+		if (m_enginePtr->m_MPI_Barrier)
+			m_enginePtr->m_MPI_Barrier->wait();
+		m_enginePtr->SendReceiveCurrents();
+	}
+	m_enginePtr->m_IterateBarrier->wait();
+#endif
+}
+
+} // namespace

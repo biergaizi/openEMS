@@ -29,6 +29,7 @@
 #define ENG_EXT_PRIO_CYLINDERMULTIGRID	-3000 //cylindrial multi-grid extension priority
 
 #include <string>
+#include "tools/tiling.h"
 
 class Operator_Extension;
 class Engine;
@@ -70,11 +71,7 @@ public:
 	//! Set the priority for this extension
 	virtual void SetPriority(int val) {m_Priority=val;}
 
-	virtual void InitializeTiling(
-		struct Block *blkX, int blk_x_max,
-		struct Block *blkY, int blk_y_max,
-		struct Block *blkZ, int blk_z_max
-	) {}
+	virtual void InitializeTiling(std::vector<Range3D> tiles);
 
 	virtual bool operator< (const Engine_Extension& other);
 

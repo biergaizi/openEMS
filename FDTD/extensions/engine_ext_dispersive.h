@@ -21,6 +21,7 @@
 #include "engine_extension.h"
 #include "FDTD/engine.h"
 #include "FDTD/operator.h"
+#include "tools/TileMap.h"
 
 class Operator_Ext_Dispersive;
 
@@ -32,6 +33,8 @@ public:
 
 	virtual void Apply2Voltages(int threadID, int start[3], int end[3]);
 	virtual void Apply2Current(int threadID, int start[3], int end[3]);
+
+	virtual void InitializeTiling(std::vector<Range3D> tiles);
 
 protected:
 	Operator_Ext_Dispersive* m_Op_Ext_Disp;
@@ -48,6 +51,10 @@ protected:
 	FDTD_FLOAT ***volt_ADE;
 
 	bool InsideTile(int start[3], int end[3], int ade_x, int ade_y, int ade_z);
+
+private:
+	TileMap m_volt_map;
+	TileMap m_curr_map;
 };
 
 #endif // ENGINE_EXT_DISPERSIVE_H

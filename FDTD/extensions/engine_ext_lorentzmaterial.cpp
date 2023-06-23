@@ -76,66 +76,50 @@ Engine_Ext_LorentzMaterial::~Engine_Ext_LorentzMaterial()
 	volt_Lor_ADE=NULL;
 }
 
-void Engine_Ext_LorentzMaterial::InitializeTiling(
-	struct Block *blkX, int blk_x_max,
-	struct Block *blkY, int blk_y_max,
-	struct Block *blkZ, int blk_z_max
-)
+void Engine_Ext_LorentzMaterial::InitializeTiling(std::vector<Range3D> tiles)
 {
-	int start[3];
-	int end[3];
+	Engine_Ext_Dispersive::InitializeTiling(tiles);
 
 	std::cerr << "Engine_Ext_LorentzMaterial::InitializeTiling" << std::endl;
-
-	for (int i = 0; i < blk_x_max; i++)
+	
+	for (auto& tile : tiles)
 	{
-		start[0] = blkX[i].start;
-		end[0] = blkX[i].end;
-
-		for (int j = 0; j < blk_y_max; j++)
+		for (int o = 0; o < m_Order; ++o)
 		{
-			start[1] = blkY[j].start;
-			end[1] = blkY[j].end;
+			if (m_Op_Ext_Lor->m_volt_ADE_On[o]==false)
+				continue;
 
-			for (int k = 0; k < blk_z_max; k++)
+			unsigned int **pos = m_Op_Ext_Lor->m_LM_pos[o];
+			int* start = tile.voltageStart;
+			int* end = tile.voltageStop;
+
+			m_volt_map[std::make_tuple(o, start, end)] = std::vector<int>();
+
+			for (unsigned int i=0; i<m_Op_Ext_Lor->m_LM_Count.at(o); ++i)
 			{
-				start[2] = blkZ[k].start;
-				end[2] = blkZ[k].end;
-
-				for (int o = 0; o < m_Order; ++o)
+				if (InsideTile(start, end, pos[0][i], pos[1][i], pos[2][i]))
 				{
-					if (m_Op_Ext_Lor->m_volt_ADE_On[o]==false)
-						continue;
-
-					unsigned int **pos = m_Op_Ext_Lor->m_LM_pos[o];
-
-					m_volt_map[std::make_tuple(o, start, end)] = std::vector<int>();
-
-					for (unsigned int i=0; i<m_Op_Ext_Lor->m_LM_Count.at(o); ++i)
-					{
-						if (InsideTile(start, end, pos[0][i], pos[1][i], pos[2][i]))
-						{
-							m_volt_map[std::make_tuple(o, start, end)].push_back(i);
-						}
-					}
+					m_volt_map[std::make_tuple(o, start, end)].push_back(i);
 				}
+			}
+		}
 
-				for (int o = 0; o < m_Order; ++o)
+		for (int o = 0; o < m_Order; ++o)
+		{
+			if (m_Op_Ext_Lor->m_curr_ADE_On[o]==false)
+				continue;
+
+			unsigned int **pos = m_Op_Ext_Lor->m_LM_pos[o];
+			int* start = tile.currentStart;
+			int* end = tile.currentStop;
+
+			m_curr_map[std::make_tuple(o, start, end)] = std::vector<int>();
+
+			for (unsigned int i=0; i<m_Op_Ext_Lor->m_LM_Count.at(o); ++i)
+			{
+				if (InsideTile(start, end, pos[0][i], pos[1][i], pos[2][i]))
 				{
-					if (m_Op_Ext_Lor->m_curr_ADE_On[o]==false)
-						continue;
-
-					unsigned int **pos = m_Op_Ext_Lor->m_LM_pos[o];
-
-					m_curr_map[std::make_tuple(o, start, end)] = std::vector<int>();
-
-					for (unsigned int i=0; i<m_Op_Ext_Lor->m_LM_Count.at(o); ++i)
-					{
-						if (InsideTile(start, end, pos[0][i], pos[1][i], pos[2][i]))
-						{
-							m_curr_map[std::make_tuple(o, start, end)].push_back(i);
-						}
-					}
+					m_curr_map[std::make_tuple(o, start, end)].push_back(i);
 				}
 			}
 		}
@@ -163,7 +147,7 @@ bool Engine_Ext_LorentzMaterial::InsideTile(
 	else
 		retval = true;
 
-	if (!retval && 0)
+	if (!retval)
 	{
 		fprintf(stderr, "Dispersive: cell rejected.\n");
 	}
