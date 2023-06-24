@@ -167,7 +167,7 @@ void Engine_Ext_Dispersive::Apply2Voltages(int threadID, int start[3], int end[3
 		{
 		case Engine::BASIC:
 		{
-			for (unsigned int i = 0; i < vec.size(); i++)
+			for (auto& i : vec)
 			{
 				m_Eng->Engine::SetVolt(0,pos[0][i],pos[1][i],pos[2][i], m_Eng->Engine::GetVolt(0,pos[0][i],pos[1][i],pos[2][i]) - volt_ADE[o][0][i]);
 				m_Eng->Engine::SetVolt(1,pos[0][i],pos[1][i],pos[2][i], m_Eng->Engine::GetVolt(1,pos[0][i],pos[1][i],pos[2][i]) - volt_ADE[o][1][i]);
@@ -178,7 +178,7 @@ void Engine_Ext_Dispersive::Apply2Voltages(int threadID, int start[3], int end[3
 		case Engine::SSE:
 		{
 			Engine_sse* eng_sse = (Engine_sse*)m_Eng;
-			for (unsigned int i = 0; i < vec.size(); i++)
+			for (auto& i : vec)
 			{
 				eng_sse->Engine_sse::SetVolt(0,pos[0][i],pos[1][i],pos[2][i], eng_sse->Engine_sse::GetVolt(0,pos[0][i],pos[1][i],pos[2][i]) - volt_ADE[o][0][i]);
 				eng_sse->Engine_sse::SetVolt(1,pos[0][i],pos[1][i],pos[2][i], eng_sse->Engine_sse::GetVolt(1,pos[0][i],pos[1][i],pos[2][i]) - volt_ADE[o][1][i]);
@@ -187,7 +187,7 @@ void Engine_Ext_Dispersive::Apply2Voltages(int threadID, int start[3], int end[3
 			break;
 		}
 		default:
-			for (unsigned int i = 0; i < vec.size(); i++)
+			for (auto& i : vec)
 			{
 				m_Eng->SetVolt(0,pos[0][i],pos[1][i],pos[2][i], m_Eng->GetVolt(0,pos[0][i],pos[1][i],pos[2][i]) - volt_ADE[o][0][i]);
 				m_Eng->SetVolt(1,pos[0][i],pos[1][i],pos[2][i], m_Eng->GetVolt(1,pos[0][i],pos[1][i],pos[2][i]) - volt_ADE[o][1][i]);
@@ -212,7 +212,7 @@ void Engine_Ext_Dispersive::Apply2Current(int threadID, int start[3], int end[3]
 		{
 		case Engine::BASIC:
 		{
-			for (unsigned int i = 0; i < vec.size(); i++)
+			for (auto& i : vec)
 			{
 				m_Eng->Engine::SetCurr(0,pos[0][i],pos[1][i],pos[2][i], m_Eng->Engine::GetCurr(0,pos[0][i],pos[1][i],pos[2][i]) - curr_ADE[o][0][i]);
 				m_Eng->Engine::SetCurr(1,pos[0][i],pos[1][i],pos[2][i], m_Eng->Engine::GetCurr(1,pos[0][i],pos[1][i],pos[2][i]) - curr_ADE[o][1][i]);
@@ -223,7 +223,7 @@ void Engine_Ext_Dispersive::Apply2Current(int threadID, int start[3], int end[3]
 		case Engine::SSE:
 		{
 			Engine_sse* eng_sse = (Engine_sse*)m_Eng;
-			for (unsigned int i = 0; i < vec.size(); i++)
+			for (auto& i : vec)
 			{
 				eng_sse->Engine_sse::SetCurr(0,pos[0][i],pos[1][i],pos[2][i], eng_sse->Engine_sse::GetCurr(0,pos[0][i],pos[1][i],pos[2][i]) - curr_ADE[o][0][i]);
 				eng_sse->Engine_sse::SetCurr(1,pos[0][i],pos[1][i],pos[2][i], eng_sse->Engine_sse::GetCurr(1,pos[0][i],pos[1][i],pos[2][i]) - curr_ADE[o][1][i]);
@@ -232,7 +232,7 @@ void Engine_Ext_Dispersive::Apply2Current(int threadID, int start[3], int end[3]
 			break;
 		}
 		default:
-			for (unsigned int i = 0; i < vec.size(); i++)
+			for (auto& i : vec)
 			{
 				m_Eng->SetCurr(0,pos[0][i],pos[1][i],pos[2][i], m_Eng->GetCurr(0,pos[0][i],pos[1][i],pos[2][i]) - curr_ADE[o][0][i]);
 				m_Eng->SetCurr(1,pos[0][i],pos[1][i],pos[2][i], m_Eng->GetCurr(1,pos[0][i],pos[1][i],pos[2][i]) - curr_ADE[o][1][i]);
