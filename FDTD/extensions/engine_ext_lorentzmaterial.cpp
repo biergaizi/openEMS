@@ -93,13 +93,11 @@ void Engine_Ext_LorentzMaterial::InitializeTiling(std::vector<Range3D> tiles)
 			int* start = tile.voltageStart;
 			int* end = tile.voltageStop;
 
-			m_volt_map[std::make_tuple(o, start, end)] = std::vector<int>();
-
 			for (unsigned int i=0; i<m_Op_Ext_Lor->m_LM_Count.at(o); ++i)
 			{
 				if (InsideTile(start, end, pos[0][i], pos[1][i], pos[2][i]))
 				{
-					m_volt_map[std::make_tuple(o, start, end)].push_back(i);
+					m_volt_map[GetTileKey(o, start, end)].push_back(i);
 				}
 			}
 		}
@@ -113,13 +111,11 @@ void Engine_Ext_LorentzMaterial::InitializeTiling(std::vector<Range3D> tiles)
 			int* start = tile.currentStart;
 			int* end = tile.currentStop;
 
-			m_curr_map[std::make_tuple(o, start, end)] = std::vector<int>();
-
 			for (unsigned int i=0; i<m_Op_Ext_Lor->m_LM_Count.at(o); ++i)
 			{
 				if (InsideTile(start, end, pos[0][i], pos[1][i], pos[2][i]))
 				{
-					m_curr_map[std::make_tuple(o, start, end)].push_back(i);
+					m_curr_map[GetTileKey(o, start, end)].push_back(i);
 				}
 			}
 		}
@@ -158,7 +154,9 @@ void Engine_Ext_LorentzMaterial::DoPreVoltageUpdates(int threadID, int start[3],
 {
 	for (int o=0;o<m_Order;++o)
 	{
-		auto vec = m_volt_map[std::make_tuple(o, start, end)];
+		if (m_Op_Ext_Lor->m_volt_ADE_On[o]==false) continue;
+
+		auto vec = m_volt_map[GetTileKey(o, start, end)];
 		unsigned int **pos = m_Op_Ext_Lor->m_LM_pos[o];
 
 		if (m_Op_Ext_Lor->m_volt_Lor_ADE_On[o])
@@ -279,7 +277,9 @@ void Engine_Ext_LorentzMaterial::DoPreCurrentUpdates(int threadID, int start[3],
 {
 	for (int o=0;o<m_Order;++o)
 	{
-		auto vec = m_curr_map[std::make_tuple(o, start, end)];
+		if (m_Op_Ext_Lor->m_curr_ADE_On[o]==false) continue;
+
+		auto vec = m_curr_map[GetTileKey(o, start, end)];
 		unsigned int **pos = m_Op_Ext_Lor->m_LM_pos[o];
 
 		if (m_Op_Ext_Lor->m_curr_Lor_ADE_On[o])
