@@ -376,6 +376,7 @@ void thread::operator()()
 		for (unsigned int iter=0; iter<m_enginePtr->m_iterTS; ++iter)
 		{
 			iterateTimesteps(m_tiles);
+			//std::exit(0);
 
 			if (m_threadID == 0)
 				++m_enginePtr->numTS; // only the first thread increments numTS

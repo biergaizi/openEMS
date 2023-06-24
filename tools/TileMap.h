@@ -8,8 +8,7 @@ struct Block {
         int end;
 };
 
-// std::tuple<order, start[3], stop[3]>
-using TileKey = std::tuple<int, int*, int*>;
+using TileKey = std::tuple<int, std::array<int, 3>, std::array<int, 3>>;
 
 struct TileKeyHash {
 	std::size_t operator()(const TileKey& key) const
@@ -23,6 +22,17 @@ struct TileKeyHash {
 		return boost::hash_value(t);
 	}
 };
+
+inline TileKey GetTileKey(int order, int start[3], int end[3])
+{
+	std::array<int, 3> startArray = {
+		start[0], start[1], start[2]
+	};
+	std::array<int, 3> stopArray = {
+		end[0], end[1], end[2]
+	};
+	return std::make_tuple(order, startArray, stopArray);
+}
 
 //using Coords3 = std::array<unsigned int, 3>;
 using TileMap = std::unordered_map<TileKey, std::vector<int>, TileKeyHash>;
