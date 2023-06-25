@@ -73,6 +73,18 @@ Engine_Ext_Dispersive::~Engine_Ext_Dispersive()
 
 	delete[] volt_ADE;
 	volt_ADE=NULL;
+
+	for (auto& it : m_volt_map)
+	{
+		auto& vec = it.second;
+		vec.clear();
+	}
+
+	for (auto& it : m_volt_map)
+	{
+		auto& vec = it.second;
+		vec.clear();
+	}
 }
 
 void Engine_Ext_Dispersive::InitializeTiling(std::vector<Range3D> tiles)

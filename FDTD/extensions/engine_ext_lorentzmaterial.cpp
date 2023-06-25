@@ -74,6 +74,18 @@ Engine_Ext_LorentzMaterial::~Engine_Ext_LorentzMaterial()
 
 	delete[] volt_Lor_ADE;
 	volt_Lor_ADE=NULL;
+
+	for (auto& it : m_volt_map)
+	{
+		auto& vec = it.second;
+		vec.clear();
+	}
+
+	for (auto& it : m_volt_map)
+	{
+		auto& vec = it.second;
+		vec.clear();
+	}
 }
 
 void Engine_Ext_LorentzMaterial::InitializeTiling(std::vector<Range3D> tiles)
