@@ -179,8 +179,10 @@ void Engine_Multithread::changeNumThreads(unsigned int numThreads)
 #endif
 
 	int blkSizes[3] = {
-		m_Op_MT->GetNumberOfLines(0),
-		m_Op_MT->GetNumberOfLines(1),
+		//m_Op_MT->GetNumberOfLines(0),
+		//m_Op_MT->GetNumberOfLines(1),
+		10,
+		10,
 		m_Op_MT->GetNumberOfLines(2)
 	};
 
@@ -434,12 +436,17 @@ void thread::iterateTimesteps(std::vector<Range3D>& tiles)
 		//pre current stuff
 		m_enginePtr->DoPreCurrentUpdates(m_threadID, tile.currentStart, tile.currentStop);
 
-		//current updates
-		if (tile.currentStop[2] > op->GetNumberOfLines(2) - 2)
+		int currentStopSkipLast[3] = {tile.currentStop[0], tile.currentStop[1], tile.currentStop[2]};
+		for (int n = 0; n < 3; n++)
 		{
-			int stop[3] = {tile.currentStop[0], tile.currentStop[1], op->GetNumberOfLines(2) - 2};
-			m_enginePtr->UpdateCurrents(tile.currentStart, stop);
+			if (currentStopSkipLast[n] > op->GetNumberOfLines(n) - 2)
+			{
+				currentStopSkipLast[n] = op->GetNumberOfLines(n) - 2;
+			}
 		}
+
+		//current updates
+		m_enginePtr->UpdateCurrents(tile.currentStart, currentStopSkipLast);
 
 		// record time
 		DEBUG_TIME( m_enginePtr->m_timer_list[boost::this_thread::get_id()].push_back( timer1.elapsed() ); )

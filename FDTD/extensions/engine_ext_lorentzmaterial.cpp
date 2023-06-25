@@ -143,10 +143,12 @@ bool Engine_Ext_LorentzMaterial::InsideTile(
 	else
 		retval = true;
 
+#if 0
 	if (!retval)
 	{
 		fprintf(stderr, "Dispersive: cell rejected.\n");
 	}
+#endif
 	return retval;
 }
 

@@ -34,17 +34,17 @@ public:
 
 	virtual void SetNumberOfThreads(int nrThread);
 
-	virtual void DoPreVoltageUpdates() {Engine_Ext_UPML::DoPreVoltageUpdates(0);};
-	virtual void DoPreVoltageUpdates(int threadID);
-	virtual void DoPostVoltageUpdates() {Engine_Ext_UPML::DoPostVoltageUpdates(0);};
-	virtual void DoPostVoltageUpdates(int threadID);
+	virtual void DoPreVoltageUpdates() {Engine_Ext_UPML::DoPreVoltageUpdates(0, NULL, NULL);};
+	virtual void DoPreVoltageUpdates(int threadID, int start[3], int end[3]);
+	virtual void DoPostVoltageUpdates() {Engine_Ext_UPML::DoPostVoltageUpdates(0, NULL, NULL);};
+	virtual void DoPostVoltageUpdates(int threadID, int start[3], int end[3]);
 
-	virtual void DoPreCurrentUpdates() {Engine_Ext_UPML::DoPreCurrentUpdates(0);};
-	virtual void DoPreCurrentUpdates(int threadID);
-	virtual void DoPostCurrentUpdates() {Engine_Ext_UPML::DoPostCurrentUpdates(0);};
-	virtual void DoPostCurrentUpdates(int threadID);
+	virtual void DoPreCurrentUpdates() {Engine_Ext_UPML::DoPreCurrentUpdates(0, NULL, NULL);};
+	virtual void DoPreCurrentUpdates(int threadID, int start[3], int end[3]);
+	virtual void DoPostCurrentUpdates() {Engine_Ext_UPML::DoPostCurrentUpdates(0, NULL, NULL);};
+	virtual void DoPostCurrentUpdates(int threadID, int start[3], int end[3]);
 
-	//virtual bool ToLocalCoords(int start[3], int end[3], int localStart[3], int localEnd[3]);
+	virtual bool ToLocalCoords(int start[3], int end[3], int localStart[3], int localEnd[3]);
 
 protected:
 	Operator_Ext_UPML* m_Op_UPML;

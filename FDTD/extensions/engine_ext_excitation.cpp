@@ -48,10 +48,12 @@ bool Engine_Ext_Excitation::InsideTile(
 	else
 		retval = true;
 
+#if 0
 	if (!retval)
 	{
 		fprintf(stderr, "Excitation: cell rejected.\n");
 	}
+#endif
 	return retval;
 }
 
