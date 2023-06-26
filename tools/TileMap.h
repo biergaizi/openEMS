@@ -3,11 +3,6 @@
 #include <unordered_map>
 #include <boost/container_hash/extensions.hpp>
 
-struct Block {
-        int start;
-        int end;
-};
-
 using TileKey = std::tuple<int, std::array<int, 3>, std::array<int, 3>>;
 
 struct TileKeyHash {

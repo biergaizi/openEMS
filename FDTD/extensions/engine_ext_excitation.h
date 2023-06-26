@@ -30,8 +30,8 @@ public:
 	Engine_Ext_Excitation(Operator_Ext_Excitation* op_ext);
 	virtual ~Engine_Ext_Excitation();
 
-	virtual void Apply2Voltages(int threadID, int start[3], int end[3]);
-	virtual void Apply2Current(int threadID, int start[3], int end[3]);
+	virtual void Apply2Voltages(int threadID, int timestep, int start[3], int end[3]);
+	virtual void Apply2Current(int threadID, int timestep, int start[3], int end[3]);
 
 protected:
 	Operator_Ext_Excitation* m_Op_Exc;

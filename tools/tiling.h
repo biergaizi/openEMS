@@ -8,7 +8,7 @@
 #define TILING_H
 
 typedef std::pair<int, int>	Range;
-typedef std::vector<Range>	_Block;
+typedef std::vector<Range>	Block;
 
 enum {
 	TILES_RECTANGULAR,
@@ -39,7 +39,7 @@ struct Tiles {
 	 * Depending on the tiling parameters, the number
 	 * of timesteps within one block varies.
 	 */
-	std::vector<std::vector<_Block>> array;
+	std::vector<std::vector<Block>> array;
 };
 
 Tiles computeParallelogramTiles1D(
@@ -55,6 +55,7 @@ Tiles computeDiamondTiles1D(
 
 struct Range3D
 {
+	int timestep;
 	int voltageStart[3];
 	int voltageStop[3];
 	int currentStart[3];

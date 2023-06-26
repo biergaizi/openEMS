@@ -164,7 +164,7 @@ bool Engine_Ext_LorentzMaterial::InsideTile(
 	return retval;
 }
 
-void Engine_Ext_LorentzMaterial::DoPreVoltageUpdates(int threadID, int start[3], int end[3])
+void Engine_Ext_LorentzMaterial::DoPreVoltageUpdates(int threadID, int timestep, int start[3], int end[3])
 {
 	for (int o=0;o<m_Order;++o)
 	{
@@ -287,7 +287,7 @@ void Engine_Ext_LorentzMaterial::DoPreVoltageUpdates(int threadID, int start[3],
 	}
 }
 
-void Engine_Ext_LorentzMaterial::DoPreCurrentUpdates(int threadID, int start[3], int end[3])
+void Engine_Ext_LorentzMaterial::DoPreCurrentUpdates(int threadID, int timestep, int start[3], int end[3])
 {
 	for (int o=0;o<m_Order;++o)
 	{

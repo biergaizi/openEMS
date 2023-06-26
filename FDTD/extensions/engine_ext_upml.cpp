@@ -130,7 +130,7 @@ ret:
 }
 
 
-void Engine_Ext_UPML::DoPreVoltageUpdates(int threadID, int start[3], int end[3])
+void Engine_Ext_UPML::DoPreVoltageUpdates(int threadID, int timestep, int start[3], int end[3])
 {
 	if (m_Eng==NULL)
 		return;
@@ -280,7 +280,7 @@ void Engine_Ext_UPML::DoPreVoltageUpdates(int threadID, int start[3], int end[3]
 
 }
 
-void Engine_Ext_UPML::DoPostVoltageUpdates(int threadID, int start[3], int end[3])
+void Engine_Ext_UPML::DoPostVoltageUpdates(int threadID, int timestep, int start[3], int end[3])
 {
 	if (m_Eng==NULL)
 		return;
@@ -392,7 +392,7 @@ void Engine_Ext_UPML::DoPostVoltageUpdates(int threadID, int start[3], int end[3
 
 }
 
-void Engine_Ext_UPML::DoPreCurrentUpdates(int threadID, int start[3], int end[3])
+void Engine_Ext_UPML::DoPreCurrentUpdates(int threadID, int timestep, int start[3], int end[3])
 {
 	if (m_Eng==NULL)
 		return;
@@ -514,7 +514,7 @@ void Engine_Ext_UPML::DoPreCurrentUpdates(int threadID, int start[3], int end[3]
 	}
 }
 
-void Engine_Ext_UPML::DoPostCurrentUpdates(int threadID, int start[3], int end[3])
+void Engine_Ext_UPML::DoPostCurrentUpdates(int threadID, int timestep, int start[3], int end[3])
 {
 	if (m_Eng==NULL)
 		return;

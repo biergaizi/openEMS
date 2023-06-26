@@ -47,42 +47,42 @@ string Engine_Extension::GetExtensionName() const
 		return "Unknown Extension";
 }
 
-void Engine_Extension::DoPreVoltageUpdates(int threadID, int start[3], int end[3])
+void Engine_Extension::DoPreVoltageUpdates(int threadID, int timestep, int start[3], int end[3])
 {
 	//if this method gets called the derived extension obviously doesn't support multithrading, calling non-MT method...
 	if (threadID==0)
 		DoPreVoltageUpdates();
 }
 
-void Engine_Extension::DoPostVoltageUpdates(int threadID, int start[3], int end[3])
+void Engine_Extension::DoPostVoltageUpdates(int threadID, int timestep, int start[3], int end[3])
 {
 	//if this method gets called the derived extension obviously doesn't support multithrading, calling non-MT method...
 	if (threadID==0)
 		DoPostVoltageUpdates();
 }
 
-void Engine_Extension::Apply2Voltages(int threadID, int start[3], int end[3])
+void Engine_Extension::Apply2Voltages(int threadID, int timestep, int start[3], int end[3])
 {
 	//if this method gets called the derived extension obviously doesn't support multithrading, calling non-MT method...
 	if (threadID==0)
 		Apply2Voltages();
 }
 
-void Engine_Extension::DoPreCurrentUpdates(int threadID, int start[3], int end[3])
+void Engine_Extension::DoPreCurrentUpdates(int threadID, int timestep, int start[3], int end[3])
 {
 	//if this method gets called the derived extension obviously doesn't support multithrading, calling non-MT method...
 	if (threadID==0)
 		DoPreCurrentUpdates();
 }
 
-void Engine_Extension::DoPostCurrentUpdates(int threadID, int start[3], int end[3])
+void Engine_Extension::DoPostCurrentUpdates(int threadID, int timestep, int start[3], int end[3])
 {
 	//if this method gets called the derived extension obviously doesn't support multithrading, calling non-MT method...
 	if (threadID==0)
 		DoPostCurrentUpdates();
 }
 
-void Engine_Extension::Apply2Current(int threadID, int start[3], int end[3])
+void Engine_Extension::Apply2Current(int threadID, int timestep, int start[3], int end[3])
 {
 	//if this method gets called the derived extension obviously doesn't support multithrading, calling non-MT method...
 	if (threadID==0)

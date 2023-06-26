@@ -28,9 +28,9 @@ public:
 	Engine_Ext_LorentzMaterial(Operator_Ext_LorentzMaterial* op_ext_lorentz);
 	virtual ~Engine_Ext_LorentzMaterial();
 
-	virtual void DoPreVoltageUpdates(int threadID, int start[3], int end[3]);
+	virtual void DoPreVoltageUpdates(int threadID, int timestep, int start[3], int end[3]);
 
-	virtual void DoPreCurrentUpdates(int threadID, int start[3], int end[3]);
+	virtual void DoPreCurrentUpdates(int threadID, int timestep, int start[3], int end[3]);
 
 	virtual void InitializeTiling(std::vector<Range3D> tiles);
 

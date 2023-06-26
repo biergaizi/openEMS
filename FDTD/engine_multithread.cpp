@@ -185,16 +185,44 @@ void Engine_Multithread::changeNumThreads(unsigned int numThreads)
 		10,
 		m_Op_MT->GetNumberOfLines(2)
 	};
+	int blkHalfTimesteps = 5 * 2;
 
-	auto tilesPerThreadPerStage = computeRectangularTiles3D((int*) numLines, blkSizes, m_numThreads);
-	auto tilesPerThread = tilesPerThreadPerStage[0];  // assumed to be one stage only
+	fprintf(stderr, "calculating tiling for X, Y and Z axis for %d timesteps\n", blkHalfTimesteps / 2);
+	Tiles tilesX = computeDiamondTiles1D(numLines[0], blkSizes[0], blkHalfTimesteps);
+	Tiles tilesY = computeDiamondTiles1D(numLines[1], blkSizes[1], blkHalfTimesteps);
+	Tiles tilesZ = computeDiamondTiles1D(numLines[2], blkSizes[2], blkHalfTimesteps);
 
+	fprintf(stderr, "combining tilings from X, Y and Z axis\n");
+        auto tilesPerStagePerThread = combineTilesTo3D(
+		tilesX, tilesY, tilesZ,
+		blkHalfTimesteps,
+		m_numThreads
+	);
+
+	fprintf(stderr, "flattening tiling\n");
 	std::vector<Range3D> tilesForAllThreads;
-	for (auto& tiles : tilesPerThread)
+	for (auto& tilesPerStage : tilesPerStagePerThread)
 	{
-		for (auto& tile : tiles)
+		for (auto& tiles : tilesPerStage)
 		{
-			tilesForAllThreads.push_back(tile);
+			for (auto& tile : tiles)
+			{
+				tilesForAllThreads.push_back(tile);
+			}
+		}
+	}
+
+	// This is rather ugly but we do need a fallback without temporal tiling,
+	// but at least we can still use spatial tiling.
+	auto fallbackTilesPerStagePerThread = computeRectangularTiles3D((int*) numLines, blkSizes, m_numThreads);
+	for (auto& fallbackTilesPerStage : fallbackTilesPerStagePerThread)
+	{
+		for (auto& tiles : fallbackTilesPerStage)
+		{
+			for (auto& tile : tiles)
+			{
+				tilesForAllThreads.push_back(tile);
+			}
 		}
 	}
 
@@ -215,13 +243,20 @@ void Engine_Multithread::changeNumThreads(unsigned int numThreads)
 			if (g_settings.GetVerboseLevel()>0) {}
 				//cout << stop-start+1 << ";";
 //		NS_Engine_Multithread::DBG().cout() << "###DEBUG## Thread " << n << ": start=" << start << " stop=" << stop  << " stop_h=" << stop_h << std::endl;
-		boost::thread *t = new boost::thread( NS_Engine_Multithread::thread(this,tilesPerThread[n],n) );
+		boost::thread *t = new boost::thread(
+			NS_Engine_Multithread::thread(
+				this,
+				tilesPerStagePerThread[n], blkHalfTimesteps / 2,
+				fallbackTilesPerStagePerThread[n],
+				n
+		));
 		m_thread_group->add_thread( t );
 	}
 
 	for (size_t n=0; n<m_Eng_exts.size(); ++n)
 		m_Eng_exts.at(n)->SetNumberOfThreads(m_numThreads);
 
+	fprintf(stderr, "hashing tiling\n");
 	InitializeTiling(tilesForAllThreads);
 }
 
@@ -256,63 +291,63 @@ void Engine_Multithread::NextInterval(float curr_speed)
 	}
 }
 
-void Engine_Multithread::DoPreVoltageUpdates(int threadID, int start[3], int end[3])
+void Engine_Multithread::DoPreVoltageUpdates(int threadID, int timestep, int start[3], int end[3])
 {
 	//execute extensions in reverse order -> highest priority gets access to the voltages last
 	for (int n=m_Eng_exts.size()-1; n>=0; --n)
 	{
-		m_Eng_exts.at(n)->DoPreVoltageUpdates(threadID, start, end);
+		m_Eng_exts.at(n)->DoPreVoltageUpdates(threadID, timestep, start, end);
 		//m_IterateBarrier->wait();
 	}
 
 }
 
-void Engine_Multithread::DoPostVoltageUpdates(int threadID, int start[3], int end[3])
+void Engine_Multithread::DoPostVoltageUpdates(int threadID, int timestep, int start[3], int end[3])
 {
 	//execute extensions in normal order -> highest priority gets access to the voltages first
 	for (size_t n=0; n<m_Eng_exts.size(); ++n)
 	{
-		m_Eng_exts.at(n)->DoPostVoltageUpdates(threadID, start, end);
+		m_Eng_exts.at(n)->DoPostVoltageUpdates(threadID, timestep, start, end);
 		//m_IterateBarrier->wait();
 	}
 }
 
-void Engine_Multithread::Apply2Voltages(int threadID, int start[3], int end[3])
+void Engine_Multithread::Apply2Voltages(int threadID, int timestep, int start[3], int end[3])
 {
 	//execute extensions in normal order -> highest priority gets access to the voltages first
 	for (size_t n=0; n<m_Eng_exts.size(); ++n)
 	{
-		m_Eng_exts.at(n)->Apply2Voltages(threadID, start, end);
+		m_Eng_exts.at(n)->Apply2Voltages(threadID, timestep, start, end);
 		//m_IterateBarrier->wait();
 	}
 }
 
-void Engine_Multithread::DoPreCurrentUpdates(int threadID, int start[3], int end[3])
+void Engine_Multithread::DoPreCurrentUpdates(int threadID, int timestep, int start[3], int end[3])
 {
 	//execute extensions in reverse order -> highest priority gets access to the currents last
 	for (int n=m_Eng_exts.size()-1; n>=0; --n)
 	{
-		m_Eng_exts.at(n)->DoPreCurrentUpdates(threadID, start, end);
+		m_Eng_exts.at(n)->DoPreCurrentUpdates(threadID, timestep, start, end);
 		//m_IterateBarrier->wait();
 	}
 }
 
-void Engine_Multithread::DoPostCurrentUpdates(int threadID, int start[3], int end[3])
+void Engine_Multithread::DoPostCurrentUpdates(int threadID, int timestep, int start[3], int end[3])
 {
 	//execute extensions in normal order -> highest priority gets access to the currents first
 	for (size_t n=0; n<m_Eng_exts.size(); ++n)
 	{
-		m_Eng_exts.at(n)->DoPostCurrentUpdates(threadID, start, end);
+		m_Eng_exts.at(n)->DoPostCurrentUpdates(threadID, timestep, start, end);
 		//m_IterateBarrier->wait();
 	}
 }
 
-void Engine_Multithread::Apply2Current(int threadID, int start[3], int end[3])
+void Engine_Multithread::Apply2Current(int threadID, int timestep, int start[3], int end[3])
 {
 	//execute extensions in normal order -> highest priority gets access to the currents first
 	for (size_t n=0; n<m_Eng_exts.size(); ++n)
 	{
-		m_Eng_exts.at(n)->Apply2Current(threadID, start, end);
+		m_Eng_exts.at(n)->Apply2Current(threadID, timestep, start, end);
 		//m_IterateBarrier->wait();
 	}
 }
@@ -335,11 +370,19 @@ void Engine_Multithread::InitializeTiling(std::vector<Range3D> tiles)
 namespace NS_Engine_Multithread
 {
 
-thread::thread( Engine_Multithread* ptr, std::vector<Range3D> tiles, unsigned int threadID )
+thread::thread(
+	Engine_Multithread* ptr,
+	std::vector<Tiles3D> tiles,
+	unsigned int blkTimesteps,
+	std::vector<Tiles3D> fallbackTiles,
+	unsigned int threadID 
+)
 {
 	m_enginePtr = ptr;
 	m_tiles = tiles;
 	m_threadID = threadID;
+	m_fallbackTiles = fallbackTiles;
+	m_blkTimesteps = blkTimesteps;
 
 	fprintf(stderr, "Tiles - Thread: %d / Tiles: %d\n", threadID, tiles.size());
 }
@@ -375,14 +418,47 @@ void thread::operator()()
 
 		DEBUG_TIME( Timer timer1 );
 
-		for (unsigned int iter=0; iter<m_enginePtr->m_iterTS; ++iter)
+		// how many timesteps are we calculating at the same time in
+		// diamond tiling?
+		unsigned int batchTimesteps = m_enginePtr->m_iterTS / m_blkTimesteps;
+		unsigned int leftoverTimesteps = m_enginePtr->m_iterTS % m_blkTimesteps;
+
+		for (unsigned int iter=0; iter < batchTimesteps; ++iter)
 		{
-			iterateTimesteps(m_tiles);
+			for (unsigned int stage = 0; stage < m_tiles.size(); stage++)
+			{
+				iterateTimesteps(m_tiles[stage]);
+			}
 			//std::exit(0);
 
 			if (m_threadID == 0)
-				++m_enginePtr->numTS; // only the first thread increments numTS
+				m_enginePtr->numTS += m_blkTimesteps; // only the first thread increments numTS
+
 		}
+
+		if (m_threadID == 0 && leftoverTimesteps > 0) {
+			fprintf(stderr, "this iteration has %d leftover timesteps...\n", leftoverTimesteps);
+		}
+
+		// FIXME: currently broken and causes segmentation fault.
+		for (unsigned int iter = 0; iter < leftoverTimesteps; ++iter)
+		{
+			for (unsigned int stage = 0; stage < m_tiles.size(); stage++)
+			{
+				iterateUnskewedSingleTimestep(m_fallbackTiles[stage]);
+			}
+
+			if (m_threadID == 0)
+				m_enginePtr->numTS += 1; // only the first thread increments numTS
+		}
+
+		//if (leftoverTimesteps)
+		//{
+		//	iterateTimesteps(m_allTiles);
+
+		//	if (m_threadID == 0)
+		//		m_enginePtr->numTS += batchTimesteps;
+		//}
 
 		m_enginePtr->m_stopBarrier->wait();
 	}
@@ -396,8 +472,11 @@ void thread::iterateTimesteps(std::vector<Range3D>& tiles)
 
 	for (auto& tile : tiles)
 	{
+		int skewedTimestepOffset = tile.timestep;		
+		int timestep = m_enginePtr->numTS + skewedTimestepOffset;
+
 		// pre voltage stuff...
-		m_enginePtr->DoPreVoltageUpdates(m_threadID, tile.voltageStart, tile.voltageStop);
+		m_enginePtr->DoPreVoltageUpdates(m_threadID, timestep, tile.voltageStart, tile.voltageStop);
 
 		//voltage updates
 		//fprintf(stderr, "UpdateVoltages (%d %d) (%d %d) (%d %d)\n",
@@ -411,8 +490,80 @@ void thread::iterateTimesteps(std::vector<Range3D>& tiles)
 		DEBUG_TIME( m_enginePtr->m_timer_list[boost::this_thread::get_id()].push_back( timer1.elapsed() ); )
 
 		//post voltage stuff...
-		m_enginePtr->DoPostVoltageUpdates(m_threadID, tile.voltageStart, tile.voltageStop);
-		m_enginePtr->Apply2Voltages(m_threadID, tile.voltageStart, tile.voltageStop);
+		m_enginePtr->DoPostVoltageUpdates(m_threadID, timestep, tile.voltageStart, tile.voltageStop);
+		m_enginePtr->Apply2Voltages(m_threadID, timestep, tile.voltageStart, tile.voltageStop);
+
+		//pre current stuff
+		m_enginePtr->DoPreCurrentUpdates(m_threadID, timestep, tile.currentStart, tile.currentStop);
+
+		int currentStopSkipLast[3] = {tile.currentStop[0], tile.currentStop[1], tile.currentStop[2]};
+		for (int n = 0; n < 3; n++)
+		{
+			if (currentStopSkipLast[n] > op->GetNumberOfLines(n) - 2)
+			{
+				currentStopSkipLast[n] = op->GetNumberOfLines(n) - 2;
+			}
+		}
+
+		//current updates
+		m_enginePtr->UpdateCurrents(tile.currentStart, currentStopSkipLast);
+
+		// record time
+		DEBUG_TIME( m_enginePtr->m_timer_list[boost::this_thread::get_id()].push_back( timer1.elapsed() ); )
+
+		//post current stuff
+		m_enginePtr->DoPostCurrentUpdates(m_threadID, timestep, tile.currentStart, tile.currentStop);
+		m_enginePtr->Apply2Current(m_threadID, timestep, tile.currentStart, tile.currentStop);
+
+		// record time
+		DEBUG_TIME( m_enginePtr->m_timer_list[boost::this_thread::get_id()].push_back( timer1.elapsed() ); )
+	}
+	m_enginePtr->m_IterateBarrier->wait();
+
+
+#ifdef MPI_SUPPORT
+	if (m_threadID==0)
+	{
+		if (m_enginePtr->m_MPI_Barrier)
+			m_enginePtr->m_MPI_Barrier->wait();
+		m_enginePtr->SendReceiveVoltages();
+	}
+	m_enginePtr->m_IterateBarrier->wait();
+
+	if (m_threadID==0)
+	{
+		if (m_enginePtr->m_MPI_Barrier)
+			m_enginePtr->m_MPI_Barrier->wait();
+		m_enginePtr->SendReceiveCurrents();
+	}
+	m_enginePtr->m_IterateBarrier->wait();
+#endif
+}
+
+void thread::iterateUnskewedSingleTimestep(std::vector<Range3D>& tiles)
+{
+	auto op = m_enginePtr->m_Op_MT;
+	int timestep = m_enginePtr->numTS;
+
+	for (auto& tile : tiles)
+	{
+		// pre voltage stuff...
+		m_enginePtr->DoPreVoltageUpdates(m_threadID, timestep, tile.voltageStart, tile.voltageStop);
+
+		//voltage updates
+		//fprintf(stderr, "UpdateVoltages (%d %d) (%d %d) (%d %d)\n",
+		//	tile.voltageStart[0], tile.voltageStop[0],
+		//	tile.voltageStart[1], tile.voltageStop[1],
+		//	tile.voltageStart[2], tile.voltageStop[2]
+		//);
+		m_enginePtr->UpdateVoltages(tile.voltageStart, tile.voltageStop);
+
+		// record time
+		DEBUG_TIME( m_enginePtr->m_timer_list[boost::this_thread::get_id()].push_back( timer1.elapsed() ); )
+
+		//post voltage stuff...
+		m_enginePtr->DoPostVoltageUpdates(m_threadID, timestep, tile.voltageStart, tile.voltageStop);
+		m_enginePtr->Apply2Voltages(m_threadID, timestep, tile.voltageStart, tile.voltageStop);
 	}
 
 	//cout << "Thread " << boost::this_thread::get_id() << " m_barrier1 waiting..." << endl;
@@ -434,7 +585,7 @@ void thread::iterateTimesteps(std::vector<Range3D>& tiles)
 
 	for (auto& tile : tiles) {
 		//pre current stuff
-		m_enginePtr->DoPreCurrentUpdates(m_threadID, tile.currentStart, tile.currentStop);
+		m_enginePtr->DoPreCurrentUpdates(m_threadID, timestep, tile.currentStart, tile.currentStop);
 
 		int currentStopSkipLast[3] = {tile.currentStop[0], tile.currentStop[1], tile.currentStop[2]};
 		for (int n = 0; n < 3; n++)
@@ -452,8 +603,8 @@ void thread::iterateTimesteps(std::vector<Range3D>& tiles)
 		DEBUG_TIME( m_enginePtr->m_timer_list[boost::this_thread::get_id()].push_back( timer1.elapsed() ); )
 
 		//post current stuff
-		m_enginePtr->DoPostCurrentUpdates(m_threadID, tile.currentStart, tile.currentStop);
-		m_enginePtr->Apply2Current(m_threadID, tile.currentStart, tile.currentStop);
+		m_enginePtr->DoPostCurrentUpdates(m_threadID, timestep, tile.currentStart, tile.currentStop);
+		m_enginePtr->Apply2Current(m_threadID, timestep, tile.currentStart, tile.currentStop);
 	}
 
 	// record time

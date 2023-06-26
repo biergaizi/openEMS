@@ -70,13 +70,15 @@ protected:
 class thread
 {
 public:
-	thread( Engine_Multithread* ptr, std::vector<Range3D> tiles, unsigned int threadID );
+	thread( Engine_Multithread* ptr, std::vector<Tiles3D> tiles, unsigned int blkTimesteps, std::vector<Tiles3D> fallbackTiles, unsigned int threadID );
 	void operator()();
 protected:
 	unsigned int m_start, m_stop, m_stop_h, m_threadID;
-	std::vector<Range3D> m_tiles;
+	unsigned int m_blkTimesteps;
+	std::vector<Tiles3D> m_tiles, m_fallbackTiles;
 	Engine_Multithread *m_enginePtr;
 	void iterateTimesteps(std::vector<Range3D>&);
+	void iterateUnskewedSingleTimestep(std::vector<Range3D>&);
 };
 } // namespace
 
@@ -97,13 +99,13 @@ public:
 	//! Iterate \a iterTS number of timesteps
 	virtual bool IterateTS(unsigned int iterTS);
 
-	virtual void DoPreVoltageUpdates(int threadID, int start[3], int end[3]);
-	virtual void DoPostVoltageUpdates(int threadID, int start[3], int end[3]);
-	virtual void Apply2Voltages(int threadID, int start[3], int end[3]);
+	virtual void DoPreVoltageUpdates(int threadID, int timestep, int start[3], int end[3]);
+	virtual void DoPostVoltageUpdates(int threadID, int timestep, int start[3], int end[3]);
+	virtual void Apply2Voltages(int threadID, int timestep, int start[3], int end[3]);
 
-	virtual void DoPreCurrentUpdates(int threadID, int start[3], int end[3]);
-	virtual void DoPostCurrentUpdates(int threadID, int start[3], int end[3]);
-	virtual void Apply2Current(int threadID, int start[3], int end[3]);
+	virtual void DoPreCurrentUpdates(int threadID, int timestep, int start[3], int end[3]);
+	virtual void DoPostCurrentUpdates(int threadID, int timestep, int start[3], int end[3]);
+	virtual void Apply2Current(int threadID, int timestep, int start[3], int end[3]);
 
 	virtual void InitializeTiling(std::vector<Range3D> tiles);
 

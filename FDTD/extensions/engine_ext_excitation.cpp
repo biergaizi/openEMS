@@ -57,13 +57,13 @@ bool Engine_Ext_Excitation::InsideTile(
 	return retval;
 }
 
-void Engine_Ext_Excitation::Apply2Voltages(int threadID, int start[3], int end[3])
+void Engine_Ext_Excitation::Apply2Voltages(int threadID, int timestep, int start[3], int end[3])
 {
 	//soft voltage excitation here (E-field excite)
 	int exc_pos;
 	unsigned int ny;
 	unsigned int pos[3];
-	int numTS = m_Eng->GetNumberOfTimesteps();
+	int numTS = timestep;
 	unsigned int length = m_Op_Exc->m_Exc->GetLength();
 	FDTD_FLOAT* exc_volt =  m_Op_Exc->m_Exc->GetVoltageSignal();
 
@@ -138,14 +138,14 @@ void Engine_Ext_Excitation::Apply2Voltages(int threadID, int start[3], int end[3
 	}
 }
 
-void Engine_Ext_Excitation::Apply2Current(int threadID, int start[3], int end[3])
+void Engine_Ext_Excitation::Apply2Current(int threadID, int timestep, int start[3], int end[3])
 {
 	//soft current excitation here (H-field excite)
 
 	int exc_pos;
 	unsigned int ny;
 	unsigned int pos[3];
-	int numTS = m_Eng->GetNumberOfTimesteps();
+	int numTS = timestep;
 	unsigned int length = m_Op_Exc->m_Exc->GetLength();
 	FDTD_FLOAT* exc_curr =  m_Op_Exc->m_Exc->GetCurrentSignal();
 

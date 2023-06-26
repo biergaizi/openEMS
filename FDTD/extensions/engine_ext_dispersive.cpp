@@ -163,7 +163,7 @@ bool Engine_Ext_Dispersive::InsideTile(
 	return retval;
 }
 
-void Engine_Ext_Dispersive::Apply2Voltages(int threadID, int start[3], int end[3])
+void Engine_Ext_Dispersive::Apply2Voltages(int threadID, int timestep, int start[3], int end[3])
 {
 	for (int o=0;o<m_Op_Ext_Disp->m_Order;++o)
 	{
@@ -208,7 +208,7 @@ void Engine_Ext_Dispersive::Apply2Voltages(int threadID, int start[3], int end[3
 	}
 }
 
-void Engine_Ext_Dispersive::Apply2Current(int threadID, int start[3], int end[3])
+void Engine_Ext_Dispersive::Apply2Current(int threadID, int timestep, int start[3], int end[3])
 {
 	for (int o=0;o<m_Op_Ext_Disp->m_Order;++o)
 	{
