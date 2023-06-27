@@ -437,13 +437,14 @@ void thread::operator()()
 		}
 
 		if (m_threadID == 0 && leftoverTimesteps > 0) {
+			fprintf(stderr, "requested %d TS\n", m_enginePtr->m_iterTS);
 			fprintf(stderr, "this iteration has %d leftover timesteps...\n", leftoverTimesteps);
 		}
 
 		// FIXME: currently broken and causes segmentation fault.
 		for (unsigned int iter = 0; iter < leftoverTimesteps; ++iter)
 		{
-			for (unsigned int stage = 0; stage < m_tiles.size(); stage++)
+			for (unsigned int stage = 0; stage < m_fallbackTiles.size(); stage++)
 			{
 				iterateUnskewedSingleTimestep(m_fallbackTiles[stage]);
 			}
