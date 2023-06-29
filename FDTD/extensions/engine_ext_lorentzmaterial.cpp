@@ -105,6 +105,8 @@ void Engine_Ext_LorentzMaterial::InitializeTiling(std::vector<Range3D> tiles)
 			int* start = tile.voltageStart;
 			int* end = tile.voltageStop;
 
+			m_volt_map[GetTileKey(o, start, end)].clear();
+
 			for (unsigned int i=0; i<m_Op_Ext_Lor->m_LM_Count.at(o); ++i)
 			{
 				if (InsideTile(start, end, pos[0][i], pos[1][i], pos[2][i]))
@@ -122,6 +124,8 @@ void Engine_Ext_LorentzMaterial::InitializeTiling(std::vector<Range3D> tiles)
 			unsigned int **pos = m_Op_Ext_Lor->m_LM_pos[o];
 			int* start = tile.currentStart;
 			int* end = tile.currentStop;
+
+			m_curr_map[GetTileKey(o, start, end)].clear();
 
 			for (unsigned int i=0; i<m_Op_Ext_Lor->m_LM_Count.at(o); ++i)
 			{
