@@ -29,6 +29,7 @@
 #define ENG_EXT_PRIO_CYLINDERMULTIGRID	-3000 //cylindrial multi-grid extension priority
 
 #include <string>
+#include "tools/tiling.h"
 
 class Operator_Extension;
 class Engine;
@@ -39,27 +40,44 @@ class Engine_Extension
 public:
 	virtual ~Engine_Extension();
 
+	// In the standard multi-theard engine, it's the responsibility of the extension
+	// to partition the work into multiple threads and manage the work within a thread.
+	// Before the simulation is started, the total number of threads is passed to
+	// extensions in advance for initialization. It's used only by the multi-thread
+	// engine.
 	virtual void SetNumberOfThreads(int nrThread);
+
+	// In the spatial/temporal tiling engine, it's the responsibility of the engine
+	// to partition the work into multiple tiles. Before the simulation is started,
+	// all tiles is passed to the extentions in advance for initialization. It's
+	// used only by the tiling engine.
+	virtual void InitializeTiling(std::vector<Range3D> tiles);
 
 	//! This method will be called __before__ the main engine does the usual voltage updates. This method may __not__ change the engine voltages!!!
 	virtual void DoPreVoltageUpdates() {}
 	virtual void DoPreVoltageUpdates(int threadID);
+	virtual void DoPreVoltageUpdates(int timestep, unsigned int start[3], unsigned int stop[3]);
 	//! This method will be called __after__ the main engine does the usual voltage updates. This method may __not__ change the engine voltages!!!
 	virtual void DoPostVoltageUpdates() {}
 	virtual void DoPostVoltageUpdates(int threadID);
+	virtual void DoPostVoltageUpdates(int timestep, unsigned int start[3], unsigned int stop[3]);
 	//! This method will be called __after__ all updates to the voltages and extensions and may add/set its results to the engine voltages, but may __not__ rely on the current value of the engine voltages!!!
 	virtual void Apply2Voltages() {}
 	virtual void Apply2Voltages(int threadID);
+	virtual void Apply2Voltages(int timestep, unsigned int start[3], unsigned int stop[3]);
 
 	//! This method will be called __before__ the main engine does the usual current updates. This method may __not__ change the engine current!!!
 	virtual void DoPreCurrentUpdates() {}
 	virtual void DoPreCurrentUpdates(int threadID);
+	virtual void DoPreCurrentUpdates(int timestep, unsigned int start[3], unsigned int stop[3]);
 	//! This method will be called __after__ the main engine does the usual current updates. This method may __not__ change the engine current!!!
 	virtual void DoPostCurrentUpdates() {}
 	virtual void DoPostCurrentUpdates(int threadID);
+	virtual void DoPostCurrentUpdates(int timestep, unsigned int start[3], unsigned int stop[3]);
 	//! This method will be called __after__ all updates to the current and extensions and may add/set its results to the engine current, but may __not__ rely on the current value of the engine current!!!
 	virtual void Apply2Current() {}
 	virtual void Apply2Current(int threadID);
+	virtual void Apply2Current(int timestep, unsigned int start[3], unsigned int stop[3]);
 
 	//! Set the Engine to this extension. This will usually done automatically by Engine::AddExtension
 	virtual void SetEngine(Engine* eng) {m_Eng=eng;}
@@ -76,6 +94,7 @@ public:
 
 protected:
 	Engine_Extension(Operator_Extension* op_ext);
+	void TilingUnsupportedError(void);
 
 	Operator_Extension* m_Op_ext;
 	Engine* m_Eng;
@@ -83,6 +102,8 @@ protected:
 	int m_Priority;
 
 	int m_NrThreads;
+
+	bool m_TilingSupported;
 };
 
 #endif // ENGINE_EXTENSION_H

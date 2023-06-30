@@ -26,6 +26,7 @@ Engine_Extension::Engine_Extension(Operator_Extension* op_ext)
 	m_Eng = NULL;
 	m_Priority = ENG_EXT_PRIO_DEFAULT;
 	m_NrThreads = 1;
+	m_TilingSupported = false;
 }
 
 Engine_Extension::~Engine_Extension()
@@ -47,11 +48,39 @@ string Engine_Extension::GetExtensionName() const
 		return "Unknown Extension";
 }
 
+void Engine_Extension::TilingUnsupportedError(void)
+{
+	std::cerr << "Error: ";
+	std::cerr << GetExtensionName();
+	std::cerr << " does not support the tiling engine." << std::endl;
+	std::exit(1);
+}
+
+void Engine_Extension::InitializeTiling(std::vector<Range3D> tiles)
+{
+	// If this method gets called, the derived extension either
+	// doesn't need to do anything in this method or the extension
+	// doesn't support spatial and temporial tiling. In the former
+	// case, it's a no-op. In the latter case, the program terminates.
+	if (!m_TilingSupported)
+		TilingUnsupportedError();
+}
+
 void Engine_Extension::DoPreVoltageUpdates(int threadID)
 {
 	//if this method gets called the derived extension obviously doesn't support multithrading, calling non-MT method...
 	if (threadID==0)
 		DoPreVoltageUpdates();
+}
+
+void Engine_Extension::DoPreVoltageUpdates(int timestep, unsigned int start[3], unsigned int stop[3])
+{
+	// If this method gets called, the derived extension either
+	// doesn't need to do anything in this method or the extension
+	// doesn't support spatial and temporial tiling. In the former
+	// case, it's a no-op. In the latter case, the program terminates.
+	if (!m_TilingSupported)
+		TilingUnsupportedError();
 }
 
 void Engine_Extension::DoPostVoltageUpdates(int threadID)
@@ -61,11 +90,31 @@ void Engine_Extension::DoPostVoltageUpdates(int threadID)
 		DoPostVoltageUpdates();
 }
 
+void Engine_Extension::DoPostVoltageUpdates(int timestep, unsigned int start[3], unsigned int stop[3])
+{
+	// If this method gets called, the derived extension either
+	// doesn't need to do anything in this method or the extension
+	// doesn't support spatial and temporial tiling. In the former
+	// case, it's a no-op. In the latter case, the program terminates.
+	if (!m_TilingSupported)
+		TilingUnsupportedError();
+}
+
 void Engine_Extension::Apply2Voltages(int threadID)
 {
 	//if this method gets called the derived extension obviously doesn't support multithrading, calling non-MT method...
 	if (threadID==0)
 		Apply2Voltages();
+}
+
+void Engine_Extension::Apply2Voltages(int timestep, unsigned int start[3], unsigned int stop[3])
+{
+	// If this method gets called, the derived extension either
+	// doesn't need to do anything in this method or the extension
+	// doesn't support spatial and temporial tiling. In the former
+	// case, it's a no-op. In the latter case, the program terminates.
+	if (!m_TilingSupported)
+		TilingUnsupportedError();
 }
 
 void Engine_Extension::DoPreCurrentUpdates(int threadID)
@@ -75,6 +124,16 @@ void Engine_Extension::DoPreCurrentUpdates(int threadID)
 		DoPreCurrentUpdates();
 }
 
+void Engine_Extension::DoPreCurrentUpdates(int timestep, unsigned int start[3], unsigned int stop[3])
+{
+	// If this method gets called, the derived extension either
+	// doesn't need to do anything in this method or the extension
+	// doesn't support spatial and temporial tiling. In the former
+	// case, it's a no-op. In the latter case, the program terminates.
+	if (!m_TilingSupported)
+		TilingUnsupportedError();
+}
+
 void Engine_Extension::DoPostCurrentUpdates(int threadID)
 {
 	//if this method gets called the derived extension obviously doesn't support multithrading, calling non-MT method...
@@ -82,11 +141,31 @@ void Engine_Extension::DoPostCurrentUpdates(int threadID)
 		DoPostCurrentUpdates();
 }
 
+void Engine_Extension::DoPostCurrentUpdates(int timestep, unsigned int start[3], unsigned int stop[3])
+{
+	// If this method gets called, the derived extension either
+	// doesn't need to do anything in this method or the extension
+	// doesn't support spatial and temporial tiling. In the former
+	// case, it's a no-op. In the latter case, the program terminates.
+	if (!m_TilingSupported)
+		TilingUnsupportedError();
+}
+
 void Engine_Extension::Apply2Current(int threadID)
 {
 	//if this method gets called the derived extension obviously doesn't support multithrading, calling non-MT method...
 	if (threadID==0)
 		Apply2Current();
+}
+
+void Engine_Extension::Apply2Current(int timestep, unsigned int start[3], unsigned int stop[3])
+{
+	// If this method gets called, the derived extension either
+	// doesn't need to do anything in this method or the extension
+	// doesn't support spatial and temporial tiling. In the former
+	// case, it's a no-op. In the latter case, the program terminates.
+	if (!m_TilingSupported)
+		TilingUnsupportedError();
 }
 
 bool Engine_Extension::operator< (const Engine_Extension& other)
