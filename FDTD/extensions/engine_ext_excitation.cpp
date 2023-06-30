@@ -23,6 +23,9 @@ Engine_Ext_Excitation::Engine_Ext_Excitation(Operator_Ext_Excitation* op_ext) : 
 {
 	m_Op_Exc = op_ext;
 	m_Priority = ENG_EXT_PRIO_EXCITATION;
+
+	// this extension support the tiling engine
+	m_TilingSupported = true;
 }
 
 Engine_Ext_Excitation::~Engine_Ext_Excitation()
@@ -166,5 +169,104 @@ void Engine_Ext_Excitation::Apply2Current()
 			}
 			break;
 		}
+	}
+}
+
+// Whether the excited cell (ext_x, ext_y, ext_z) is inside the
+// tile that is currently being processed.
+bool
+Engine_Ext_Excitation::InsideTile(
+	unsigned int start[3], unsigned int stop[3],
+	unsigned int ext_x, unsigned int ext_y, unsigned int ext_z
+)
+{
+	if (ext_x < start[0] || ext_x > stop[0])
+		return false;
+	else if (ext_y < start[1] || ext_y > stop[1])
+		return false;
+	else if (ext_z < start[2] || ext_z > stop[2])
+		return false;
+	else
+		return true;
+}
+
+void Engine_Ext_Excitation::Apply2Voltages(int timestep, unsigned int start[3], unsigned int stop[3])
+{
+	//soft voltage excitation here (E-field excite)
+	int exc_pos;
+	unsigned int ny;
+	unsigned int pos[3];
+	int numTS = timestep;
+	unsigned int length = m_Op_Exc->m_Exc->GetLength();
+	FDTD_FLOAT* exc_volt =  m_Op_Exc->m_Exc->GetVoltageSignal();
+
+	int p = numTS+1;
+	if (m_Op_Exc->m_Exc->GetSignalPeriod()>0)
+		p = int(m_Op_Exc->m_Exc->GetSignalPeriod()/m_Op_Exc->m_Exc->GetTimestep());
+
+	if (m_Eng->GetType() != Engine::SSE)
+	{
+		std::cerr << "Engine_Ext_Excitation: engine unsupported for tiling!" << std::endl;
+		std::exit(1);
+	}
+
+	Engine_sse* eng_sse = (Engine_sse*) m_Eng;
+
+	for (unsigned int n=0; n<m_Op_Exc->Volt_Count; ++n)
+	{
+		pos[0]=m_Op_Exc->Volt_index[0][n];
+		pos[1]=m_Op_Exc->Volt_index[1][n];
+		pos[2]=m_Op_Exc->Volt_index[2][n];
+		if (!InsideTile(start, stop, pos[0], pos[1], pos[2])) {
+			continue;
+		}
+
+		exc_pos = numTS - (int)m_Op_Exc->Volt_delay[n];
+		exc_pos *= (exc_pos>0);
+		exc_pos %= p;
+		exc_pos *= (exc_pos<(int)length);
+		ny = m_Op_Exc->Volt_dir[n];
+		eng_sse->Engine_sse::SetVolt(ny,pos, eng_sse->Engine_sse::GetVolt(ny,pos) + m_Op_Exc->Volt_amp[n]*exc_volt[exc_pos]);
+	}
+}
+
+void Engine_Ext_Excitation::Apply2Current(int timestep, unsigned int start[3], unsigned int stop[3])
+{
+	//soft current excitation here (H-field excite)
+
+	int exc_pos;
+	unsigned int ny;
+	unsigned int pos[3];
+	int numTS = timestep;
+	unsigned int length = m_Op_Exc->m_Exc->GetLength();
+	FDTD_FLOAT* exc_curr =  m_Op_Exc->m_Exc->GetCurrentSignal();
+
+	int p = numTS+1;
+	if (m_Op_Exc->m_Exc->GetSignalPeriod()>0)
+		p = int(m_Op_Exc->m_Exc->GetSignalPeriod()/m_Op_Exc->m_Exc->GetTimestep());
+
+	if (m_Eng->GetType() != Engine::SSE)
+	{
+		std::cerr << "Engine_Ext_Excitation: engine unsupported for tiling!" << std::endl;
+		std::exit(1);
+	}
+
+	Engine_sse* eng_sse = (Engine_sse*) m_Eng;
+
+	for (unsigned int n=0; n<m_Op_Exc->Curr_Count; ++n)
+	{
+		pos[0]=m_Op_Exc->Curr_index[0][n];
+		pos[1]=m_Op_Exc->Curr_index[1][n];
+		pos[2]=m_Op_Exc->Curr_index[2][n];
+		if (!InsideTile(start, stop, pos[0], pos[1], pos[2])) {
+			continue;
+		}
+
+		exc_pos = numTS - (int)m_Op_Exc->Curr_delay[n];
+		exc_pos *= (exc_pos>0);
+		exc_pos %= p;
+		exc_pos *= (exc_pos<(int)length);
+		ny = m_Op_Exc->Curr_dir[n];
+		eng_sse->Engine_sse::SetCurr(ny,pos, eng_sse->Engine_sse::GetCurr(ny,pos) + m_Op_Exc->Curr_amp[n]*exc_curr[exc_pos]);
 	}
 }

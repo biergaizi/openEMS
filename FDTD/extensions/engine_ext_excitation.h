@@ -32,9 +32,16 @@ public:
 
 	virtual void Apply2Voltages();
 	virtual void Apply2Current();
+	virtual void Apply2Voltages(int timestep, unsigned int start[3], unsigned int stop[3]);
+	virtual void Apply2Current(int timestep, unsigned int start[3], unsigned int stop[3]);
 
 protected:
 	Operator_Ext_Excitation* m_Op_Exc;
+
+	bool InsideTile(
+		unsigned int start[3], unsigned int stop[3],
+		unsigned int ext_x, unsigned int ext_y, unsigned int ext_z
+	);
 };
 
 #endif // ENGINE_EXT_EXCITATION_H
