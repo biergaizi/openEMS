@@ -110,8 +110,8 @@ void Engine_Multithread::Init()
 		m_opt_speed = true;
 		m_numThreads = 1;
 	}
-	else if (m_numThreads > m_max_numThreads)
-		m_numThreads = m_max_numThreads;
+	//else if (m_numThreads > m_max_numThreads)
+	//	m_numThreads = m_max_numThreads;
 
 #ifdef MPI_SUPPORT
 	m_MPI_Barrier = 0;
@@ -263,6 +263,7 @@ void Engine_Multithread::changeNumThreads(unsigned int numThreads)
 bool Engine_Multithread::IterateTS(unsigned int iterTS)
 {
 	m_iterTS = iterTS;
+	//fprintf(stderr, "%d TS requested.", iterTS);
 
 	//cerr << "bool Engine_Multithread::IterateTS(): starting threads ...";
 	m_startBarrier->wait(); // start the threads
@@ -423,58 +424,54 @@ void thread::operator()()
 		unsigned int batchTimesteps = m_enginePtr->m_iterTS / m_blkTimesteps;
 		unsigned int leftoverTimesteps = m_enginePtr->m_iterTS % m_blkTimesteps;
 
+		int currentTimestep = m_enginePtr->numTS;
+
 		for (unsigned int iter=0; iter < batchTimesteps; ++iter)
 		{
 			for (unsigned int stage = 0; stage < m_tiles.size(); stage++)
 			{
-				iterateTimesteps(m_tiles[stage]);
+				iterateTimesteps(currentTimestep, m_tiles[stage]);
+				m_enginePtr->m_IterateBarrier->wait();
 			}
 			//std::exit(0);
-
-			if (m_threadID == 0)
-				m_enginePtr->numTS += m_blkTimesteps; // only the first thread increments numTS
-
+			
+			currentTimestep += m_blkTimesteps;
 		}
 
 		if (m_threadID == 0 && leftoverTimesteps > 0) {
-			fprintf(stderr, "requested %d TS\n", m_enginePtr->m_iterTS);
-			fprintf(stderr, "this iteration has %d leftover timesteps...\n", leftoverTimesteps);
+			//fprintf(stderr, "requested %d TS\n", m_enginePtr->m_iterTS);
+			//fprintf(stderr, "this iteration has %d leftover timesteps...\n", leftoverTimesteps);
 		}
 
-		// FIXME: currently broken and causes segmentation fault.
 		for (unsigned int iter = 0; iter < leftoverTimesteps; ++iter)
 		{
 			for (unsigned int stage = 0; stage < m_fallbackTiles.size(); stage++)
 			{
-				iterateUnskewedSingleTimestep(m_fallbackTiles[stage]);
+				iterateUnskewedSingleTimestep(currentTimestep, m_fallbackTiles[stage]);
 			}
+			currentTimestep += 1;
 
-			if (m_threadID == 0)
-				m_enginePtr->numTS += 1; // only the first thread increments numTS
 		}
 
-		//if (leftoverTimesteps)
-		//{
-		//	iterateTimesteps(m_allTiles);
-
-		//	if (m_threadID == 0)
-		//		m_enginePtr->numTS += batchTimesteps;
-		//}
-
+		if (m_threadID == 0) {
+			 // only the first thread increments numTS
+			m_enginePtr->numTS = currentTimestep;
+		}
 		m_enginePtr->m_stopBarrier->wait();
 	}
 
 	//DBG().cout() << "Thread " << m_threadID << " (" << boost::this_thread::get_id() << ") finished." << endl;
 }
 
-void thread::iterateTimesteps(std::vector<Range3D>& tiles)
+void thread::iterateTimesteps(int timestep, std::vector<Range3D>& tiles)
 {
 	auto op = m_enginePtr->m_Op_MT;
+	int baseTimestep = timestep;
 
 	for (auto& tile : tiles)
 	{
-		int skewedTimestepOffset = tile.timestep;		
-		int timestep = m_enginePtr->numTS + skewedTimestepOffset;
+		int timestep = baseTimestep + tile.timestep;
+		//fprintf(stderr, "timestep %d\n", timestep);
 
 		// pre voltage stuff...
 		m_enginePtr->DoPreVoltageUpdates(m_threadID, timestep, tile.voltageStart, tile.voltageStop);
@@ -519,7 +516,6 @@ void thread::iterateTimesteps(std::vector<Range3D>& tiles)
 		// record time
 		DEBUG_TIME( m_enginePtr->m_timer_list[boost::this_thread::get_id()].push_back( timer1.elapsed() ); )
 	}
-	m_enginePtr->m_IterateBarrier->wait();
 
 
 #ifdef MPI_SUPPORT
@@ -541,10 +537,9 @@ void thread::iterateTimesteps(std::vector<Range3D>& tiles)
 #endif
 }
 
-void thread::iterateUnskewedSingleTimestep(std::vector<Range3D>& tiles)
+void thread::iterateUnskewedSingleTimestep(int timestep, std::vector<Range3D>& tiles)
 {
 	auto op = m_enginePtr->m_Op_MT;
-	int timestep = m_enginePtr->numTS;
 
 	for (auto& tile : tiles)
 	{

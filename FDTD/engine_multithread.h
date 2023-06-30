@@ -77,8 +77,8 @@ protected:
 	unsigned int m_blkTimesteps;
 	std::vector<Tiles3D> m_tiles, m_fallbackTiles;
 	Engine_Multithread *m_enginePtr;
-	void iterateTimesteps(std::vector<Range3D>&);
-	void iterateUnskewedSingleTimestep(std::vector<Range3D>&);
+	void iterateTimesteps(int timestep, std::vector<Range3D>&);
+	void iterateUnskewedSingleTimestep(int timestep, std::vector<Range3D>&);
 };
 } // namespace
 

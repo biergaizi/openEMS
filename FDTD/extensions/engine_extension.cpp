@@ -92,6 +92,9 @@ void Engine_Extension::Apply2Current(int threadID, int timestep, int start[3], i
 void Engine_Extension::InitializeTiling(std::vector<Range3D> tiles)
 {
 	//if this method gets called the derived extension obviously doesn't support tiling...
+	std::cerr << GetExtensionName();
+	std::cerr << " does not support tiling!" << std::endl;
+	std::exit(1);
 }
 
 bool Engine_Extension::operator< (const Engine_Extension& other)

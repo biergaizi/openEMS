@@ -247,8 +247,8 @@ bool openEMS::parseCommandLineArgument( const char *argv )
 
 void openEMS::SetNumberOfThreads(int val)
 {
-	if ((val<0) || (val>boost::thread::hardware_concurrency()))
-		val = boost::thread::hardware_concurrency();
+	//if ((val<0) || (val>boost::thread::hardware_concurrency()))
+	//	val = boost::thread::hardware_concurrency();
 	m_engine_numThreads = val;
 }
 

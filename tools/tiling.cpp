@@ -712,9 +712,9 @@ std::vector<std::vector<Tiles3D>> combineTilesTo3D(
 	}
 
 	int phaseXYZ[3] = {0, 0, 0};  /* X, Y, Z */
-	int assignedThread = 0;
 	for (int phase = 0; phase < totalPhases; phase++) {
 		fprintf(stderr, "phase(%d, %d, %d)\n", phaseXYZ[0], phaseXYZ[1], phaseXYZ[2]);
+		int assignedThread = 0;
 		int phaseX = phaseXYZ[0];
 		int phaseY = phaseXYZ[1];
 		int phaseZ = phaseXYZ[2];

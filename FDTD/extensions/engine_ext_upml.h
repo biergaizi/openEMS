@@ -45,6 +45,7 @@ public:
 	virtual void DoPostCurrentUpdates(int threadID, int timestep, int start[3], int end[3]);
 
 	virtual bool ToLocalCoords(int start[3], int end[3], int localStart[3], int localEnd[3]);
+	virtual void InitializeTiling(std::vector<Range3D> tiles) {}
 
 protected:
 	Operator_Ext_UPML* m_Op_UPML;

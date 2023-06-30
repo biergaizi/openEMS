@@ -81,94 +81,167 @@ void Engine_Ext_Mur_ABC::SetNumberOfThreads(int nrThread)
 		m_start.at(n) = m_start.at(n-1) + m_numX.at(n-1);
 }
 
-
-void Engine_Ext_Mur_ABC::DoPreVoltageUpdates(int threadID)
+// Whether the cell (mur_x, mur_y, mur_z) is inside the
+// tile that is currently being processed.
+bool Engine_Ext_Mur_ABC::InsideTile(
+	int start[3], int end[3],
+	int mur_x, int mur_y, int mur_z
+)
 {
-	if (IsActive()==false) return;
+	int retval;
+
+	if (mur_x < start[0] || mur_x > end[0])
+		retval = false;
+	else if (mur_y < start[1] || mur_y > end[1])
+		retval = false;
+	else if (mur_z < start[2] || mur_z > end[2])
+		retval = false;
+	else
+		retval = true;
+
+#if 0
+	if (!retval)
+	{
+		fprintf(stderr, "Mur ABC: cell rejected.\n");
+	}
+#endif
+	return retval;
+}
+
+void Engine_Ext_Mur_ABC::InitializeTiling(std::vector<Range3D> tiles)
+{
+	for (auto& tile : tiles)
+	{
+		unsigned int pos[] = {0,0,0};
+		unsigned int pos_shift[] = {0,0,0};
+		pos[m_ny] = m_LineNr;
+		pos_shift[m_ny] = m_LineNr_Shift;
+
+		int* start = tile.voltageStart;
+		int* end = tile.voltageStop;
+
+		m_volt_map[GetTileKey(-1, start, end)].clear();
+
+		for (unsigned int lineX=0; lineX<m_numLines[0]; ++lineX)
+		{
+			pos[m_nyP]=lineX;
+			pos_shift[m_nyP] = pos[m_nyP];
+			for (pos[m_nyPP]=0; pos[m_nyPP]<m_numLines[1]; ++pos[m_nyPP])
+			{
+				pos_shift[m_nyPP] = pos[m_nyPP];
+
+				if ((!InsideTile(start, end, pos[0], pos[1], pos[2])) &&
+				    (!InsideTile(start, end, pos_shift[0], pos_shift[1], pos_shift[2])))
+				{
+					continue;
+				}
+				else if ((InsideTile(start, end, pos[0], pos[1], pos[2])) &&
+					 (InsideTile(start, end, pos_shift[0], pos_shift[1], pos_shift[2])))
+				{
+					std::pair<int, int> nyp_nyPP_pair;
+					nyp_nyPP_pair.first = pos[m_nyP];
+					nyp_nyPP_pair.second = pos[m_nyPP];
+
+					m_volt_map[GetTileKey(-1, start, end)].push_back(nyp_nyPP_pair);
+				}
+				else {
+					// one cell is inside the tile, but another cell is not!
+					// This is unsafe, Mur's ABC cannot be calculated.
+					std::cerr << "Error: Unsupported tiling partitioning for Mur ABC detected!" << std::endl;
+					std::exit(1);
+				}
+			}
+		}
+	}
+}
+
+void Engine_Ext_Mur_ABC::DoPreVoltageUpdates(int threadID, int timestep, int start[3], int end[3])
+{
+	if (IsActive(timestep)==false) return;
 	if (m_Eng==NULL) return;
-	if (threadID>=m_NrThreads)
-		return;
+
 	unsigned int pos[] = {0,0,0};
 	unsigned int pos_shift[] = {0,0,0};
 	pos[m_ny] = m_LineNr;
 	pos_shift[m_ny] = m_LineNr_Shift;
 
+	auto vec = m_volt_map[GetTileKey(-1, start, end)];
+
 	//switch for different engine types to access faster inline engine functions
 	switch (m_Eng->GetType())
 	{
 	case Engine::BASIC:
 		{
-			for (unsigned int lineX=0; lineX<m_numX.at(threadID); ++lineX)
+			for (auto& pair : vec)
 			{
-				pos[m_nyP]=lineX+m_start.at(threadID);
-				pos_shift[m_nyP] = pos[m_nyP];
-				for (pos[m_nyPP]=0; pos[m_nyPP]<m_numLines[1]; ++pos[m_nyPP])
-				{
-					pos_shift[m_nyPP] = pos[m_nyPP];
-					m_volt_nyP[pos[m_nyP]][pos[m_nyPP]] = m_Eng->Engine::GetVolt(m_nyP,pos_shift) - m_Op_mur->m_Mur_Coeff_nyP[pos[m_nyP]][pos[m_nyPP]] * m_Eng->Engine::GetVolt(m_nyP,pos);
-					m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]] = m_Eng->Engine::GetVolt(m_nyPP,pos_shift) - m_Op_mur->m_Mur_Coeff_nyPP[pos[m_nyP]][pos[m_nyPP]] * m_Eng->Engine::GetVolt(m_nyPP,pos);
-				}
+				pos[m_nyP] = pair.first;
+				pos[m_nyPP] = pair.second;
+				pos_shift[m_nyP] = pair.first;
+				pos_shift[m_nyPP] = pair.second;
+
+				m_volt_nyP[pos[m_nyP]][pos[m_nyPP]] = m_Eng->Engine::GetVolt(m_nyP,pos_shift) - m_Op_mur->m_Mur_Coeff_nyP[pos[m_nyP]][pos[m_nyPP]] * m_Eng->Engine::GetVolt(m_nyP,pos);
+				m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]] = m_Eng->Engine::GetVolt(m_nyPP,pos_shift) - m_Op_mur->m_Mur_Coeff_nyPP[pos[m_nyP]][pos[m_nyPP]] * m_Eng->Engine::GetVolt(m_nyPP,pos);
 			}
+
 			break;
 		}
 	case Engine::SSE:
 		{
 			Engine_sse* eng_sse = (Engine_sse*) m_Eng;
-			for (unsigned int lineX=0; lineX<m_numX.at(threadID); ++lineX)
+			for (auto& pair : vec)
 			{
-				pos[m_nyP]=lineX+m_start.at(threadID);
-				pos_shift[m_nyP] = pos[m_nyP];
-				for (pos[m_nyPP]=0; pos[m_nyPP]<m_numLines[1]; ++pos[m_nyPP])
-				{
-					pos_shift[m_nyPP] = pos[m_nyPP];
-					m_volt_nyP[pos[m_nyP]][pos[m_nyPP]] = eng_sse->Engine_sse::GetVolt(m_nyP,pos_shift) - m_Op_mur->m_Mur_Coeff_nyP[pos[m_nyP]][pos[m_nyPP]] * eng_sse->Engine_sse::GetVolt(m_nyP,pos);
-					m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]] = eng_sse->Engine_sse::GetVolt(m_nyPP,pos_shift) - m_Op_mur->m_Mur_Coeff_nyPP[pos[m_nyP]][pos[m_nyPP]] * eng_sse->Engine_sse::GetVolt(m_nyPP,pos);
-				}
+				pos[m_nyP] = pair.first;
+				pos[m_nyPP] = pair.second;
+				pos_shift[m_nyP] = pair.first;
+				pos_shift[m_nyPP] = pair.second;
+
+				m_volt_nyP[pos[m_nyP]][pos[m_nyPP]] = eng_sse->Engine_sse::GetVolt(m_nyP,pos_shift) - m_Op_mur->m_Mur_Coeff_nyP[pos[m_nyP]][pos[m_nyPP]] * eng_sse->Engine_sse::GetVolt(m_nyP,pos);
+				m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]] = eng_sse->Engine_sse::GetVolt(m_nyPP,pos_shift) - m_Op_mur->m_Mur_Coeff_nyPP[pos[m_nyP]][pos[m_nyPP]] * eng_sse->Engine_sse::GetVolt(m_nyPP,pos);
 			}
+
 			break;
 		}
 	default:
-		for (unsigned int lineX=0; lineX<m_numX.at(threadID); ++lineX)
+		for (auto& pair : vec)
 		{
-			pos[m_nyP]=lineX+m_start.at(threadID);
-			pos_shift[m_nyP] = pos[m_nyP];
-			for (pos[m_nyPP]=0; pos[m_nyPP]<m_numLines[1]; ++pos[m_nyPP])
-			{
-				pos_shift[m_nyPP] = pos[m_nyPP];
-				m_volt_nyP[pos[m_nyP]][pos[m_nyPP]] = m_Eng->GetVolt(m_nyP,pos_shift) - m_Op_mur->m_Mur_Coeff_nyP[pos[m_nyP]][pos[m_nyPP]] * m_Eng->GetVolt(m_nyP,pos);
-				m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]] = m_Eng->GetVolt(m_nyPP,pos_shift) - m_Op_mur->m_Mur_Coeff_nyPP[pos[m_nyP]][pos[m_nyPP]] * m_Eng->GetVolt(m_nyPP,pos);
-			}
+			pos[m_nyP] = pair.first;
+			pos[m_nyPP] = pair.second;
+			pos_shift[m_nyP] = pair.first;
+			pos_shift[m_nyPP] = pair.second;
+
+			m_volt_nyP[pos[m_nyP]][pos[m_nyPP]] = m_Eng->GetVolt(m_nyP,pos_shift) - m_Op_mur->m_Mur_Coeff_nyP[pos[m_nyP]][pos[m_nyPP]] * m_Eng->GetVolt(m_nyP,pos);
+			m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]] = m_Eng->GetVolt(m_nyPP,pos_shift) - m_Op_mur->m_Mur_Coeff_nyPP[pos[m_nyP]][pos[m_nyPP]] * m_Eng->GetVolt(m_nyPP,pos);
 		}
 		break;
 	}
 }
 
-void Engine_Ext_Mur_ABC::DoPostVoltageUpdates(int threadID)
+void Engine_Ext_Mur_ABC::DoPostVoltageUpdates(int threadID, int timestep, int start[3], int end[3])
 {
-	if (IsActive()==false) return;
+	if (IsActive(timestep)==false) return;
 	if (m_Eng==NULL) return;
-	if (threadID>=m_NrThreads)
-		return;
+
 	unsigned int pos[] = {0,0,0};
 	unsigned int pos_shift[] = {0,0,0};
 	pos[m_ny] = m_LineNr;
 	pos_shift[m_ny] = m_LineNr_Shift;
 
+	auto vec = m_volt_map[GetTileKey(-1, start, end)];
+
 	//switch for different engine types to access faster inline engine functions
 	switch (m_Eng->GetType())
 	{
 	case Engine::BASIC:
 		{
-			for (unsigned int lineX=0; lineX<m_numX.at(threadID); ++lineX)
+			for (auto& pair : vec)
 			{
-				pos[m_nyP]=lineX+m_start.at(threadID);
-				pos_shift[m_nyP] = pos[m_nyP];
-				for (pos[m_nyPP]=0; pos[m_nyPP]<m_numLines[1]; ++pos[m_nyPP])
-				{
-					pos_shift[m_nyPP] = pos[m_nyPP];
-					m_volt_nyP[pos[m_nyP]][pos[m_nyPP]] += m_Op_mur->m_Mur_Coeff_nyP[pos[m_nyP]][pos[m_nyPP]] * m_Eng->Engine::GetVolt(m_nyP,pos_shift);
-					m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]] += m_Op_mur->m_Mur_Coeff_nyPP[pos[m_nyP]][pos[m_nyPP]] * m_Eng->Engine::GetVolt(m_nyPP,pos_shift);
-				}
+				pos[m_nyP] = pair.first;
+				pos[m_nyPP] = pair.second;
+				pos_shift[m_nyP] = pair.first;
+				pos_shift[m_nyPP] = pair.second;
+
+				m_volt_nyP[pos[m_nyP]][pos[m_nyPP]] += m_Op_mur->m_Mur_Coeff_nyP[pos[m_nyP]][pos[m_nyPP]] * m_Eng->Engine::GetVolt(m_nyP,pos_shift);
+				m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]] += m_Op_mur->m_Mur_Coeff_nyPP[pos[m_nyP]][pos[m_nyPP]] * m_Eng->Engine::GetVolt(m_nyPP,pos_shift);
 			}
 			break;
 		}
@@ -176,58 +249,56 @@ void Engine_Ext_Mur_ABC::DoPostVoltageUpdates(int threadID)
 	case Engine::SSE:
 		{
 			Engine_sse* eng_sse = (Engine_sse*) m_Eng;
-			for (unsigned int lineX=0; lineX<m_numX.at(threadID); ++lineX)
+			for (auto& pair : vec)
 			{
-				pos[m_nyP]=lineX+m_start.at(threadID);
-				pos_shift[m_nyP] = pos[m_nyP];
-				for (pos[m_nyPP]=0; pos[m_nyPP]<m_numLines[1]; ++pos[m_nyPP])
-				{
-					pos_shift[m_nyPP] = pos[m_nyPP];
-					m_volt_nyP[pos[m_nyP]][pos[m_nyPP]] += m_Op_mur->m_Mur_Coeff_nyP[pos[m_nyP]][pos[m_nyPP]] * eng_sse->Engine_sse::GetVolt(m_nyP,pos_shift);
-					m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]] += m_Op_mur->m_Mur_Coeff_nyPP[pos[m_nyP]][pos[m_nyPP]] * eng_sse->Engine_sse::GetVolt(m_nyPP,pos_shift);
-				}
+				pos[m_nyP] = pair.first;
+				pos[m_nyPP] = pair.second;
+				pos_shift[m_nyP] = pair.first;
+				pos_shift[m_nyPP] = pair.second;
+
+				m_volt_nyP[pos[m_nyP]][pos[m_nyPP]] += m_Op_mur->m_Mur_Coeff_nyP[pos[m_nyP]][pos[m_nyPP]] * eng_sse->Engine_sse::GetVolt(m_nyP,pos_shift);
+				m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]] += m_Op_mur->m_Mur_Coeff_nyPP[pos[m_nyP]][pos[m_nyPP]] * eng_sse->Engine_sse::GetVolt(m_nyPP,pos_shift);
 			}
 			break;
 		}
 
 	default:
-		for (unsigned int lineX=0; lineX<m_numX.at(threadID); ++lineX)
+		for (auto& pair : vec)
 		{
-			pos[m_nyP]=lineX+m_start.at(threadID);
-			pos_shift[m_nyP] = pos[m_nyP];
-			for (pos[m_nyPP]=0; pos[m_nyPP]<m_numLines[1]; ++pos[m_nyPP])
-			{
-				pos_shift[m_nyPP] = pos[m_nyPP];
-				m_volt_nyP[pos[m_nyP]][pos[m_nyPP]] += m_Op_mur->m_Mur_Coeff_nyP[pos[m_nyP]][pos[m_nyPP]] * m_Eng->GetVolt(m_nyP,pos_shift);
-				m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]] += m_Op_mur->m_Mur_Coeff_nyPP[pos[m_nyP]][pos[m_nyPP]] * m_Eng->GetVolt(m_nyPP,pos_shift);
-			}
+			pos[m_nyP] = pair.first;
+			pos[m_nyPP] = pair.second;
+			pos_shift[m_nyP] = pair.first;
+			pos_shift[m_nyPP] = pair.second;
+
+			m_volt_nyP[pos[m_nyP]][pos[m_nyPP]] += m_Op_mur->m_Mur_Coeff_nyP[pos[m_nyP]][pos[m_nyPP]] * m_Eng->GetVolt(m_nyP,pos_shift);
+			m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]] += m_Op_mur->m_Mur_Coeff_nyPP[pos[m_nyP]][pos[m_nyPP]] * m_Eng->GetVolt(m_nyPP,pos_shift);
 		}
 		break;
 	}
 }
 
-void Engine_Ext_Mur_ABC::Apply2Voltages(int threadID)
+void Engine_Ext_Mur_ABC::Apply2Voltages(int threadID, int timestep, int start[3], int end[3])
 {
-	if (IsActive()==false) return;
-	if (threadID>=m_NrThreads)
-		return;
+	if (IsActive(timestep)==false) return;
 	if (m_Eng==NULL) return;
+
 	unsigned int pos[] = {0,0,0};
 	pos[m_ny] = m_LineNr;
+
+	auto vec = m_volt_map[GetTileKey(-1, start, end)];
 
 	//switch for different engine types to access faster inline engine functions
 	switch (m_Eng->GetType())
 	{
 	case Engine::BASIC:
 		{
-			for (unsigned int lineX=0; lineX<m_numX.at(threadID); ++lineX)
+			for (auto& pair : vec)
 			{
-				pos[m_nyP]=lineX+m_start.at(threadID);
-				for (pos[m_nyPP]=0; pos[m_nyPP]<m_numLines[1]; ++pos[m_nyPP])
-				{
-					m_Eng->Engine::SetVolt(m_nyP,pos, m_volt_nyP[pos[m_nyP]][pos[m_nyPP]]);
-					m_Eng->Engine::SetVolt(m_nyPP,pos, m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]]);
-				}
+				pos[m_nyP] = pair.first;
+				pos[m_nyPP] = pair.second;
+
+				m_Eng->Engine::SetVolt(m_nyP,pos, m_volt_nyP[pos[m_nyP]][pos[m_nyPP]]);
+				m_Eng->Engine::SetVolt(m_nyPP,pos, m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]]);
 			}
 			break;
 		}
@@ -235,24 +306,25 @@ void Engine_Ext_Mur_ABC::Apply2Voltages(int threadID)
 	case Engine::SSE:
 		{
 			Engine_sse* eng_sse = (Engine_sse*) m_Eng;
-			for (unsigned int lineX=0; lineX<m_numX.at(threadID); ++lineX)
+			for (auto& pair : vec)
 			{
-				pos[m_nyP]=lineX+m_start.at(threadID);
-				for (pos[m_nyPP]=0; pos[m_nyPP]<m_numLines[1]; ++pos[m_nyPP])
-				{
-					eng_sse->Engine_sse::SetVolt(m_nyP,pos, m_volt_nyP[pos[m_nyP]][pos[m_nyPP]]);
-					eng_sse->Engine_sse::SetVolt(m_nyPP,pos, m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]]);
-				}
+				pos[m_nyP] = pair.first;
+				pos[m_nyPP] = pair.second;
+
+				eng_sse->Engine_sse::SetVolt(m_nyP,pos, m_volt_nyP[pos[m_nyP]][pos[m_nyPP]]);
+				eng_sse->Engine_sse::SetVolt(m_nyPP,pos, m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]]);
 			}
 			break;
 		}
 
 	default:
-		for (unsigned int lineX=0; lineX<m_numX.at(threadID); ++lineX)
+		for (unsigned int lineX=0; lineX<m_numLines[0]; ++lineX)
 		{
-			pos[m_nyP]=lineX+m_start.at(threadID);
-			for (pos[m_nyPP]=0; pos[m_nyPP]<m_numLines[1]; ++pos[m_nyPP])
+			for (auto& pair : vec)
 			{
+				pos[m_nyP] = pair.first;
+				pos[m_nyPP] = pair.second;
+
 				m_Eng->SetVolt(m_nyP,pos, m_volt_nyP[pos[m_nyP]][pos[m_nyPP]]);
 				m_Eng->SetVolt(m_nyPP,pos, m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]]);
 			}

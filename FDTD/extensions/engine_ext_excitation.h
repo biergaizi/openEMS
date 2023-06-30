@@ -32,6 +32,7 @@ public:
 
 	virtual void Apply2Voltages(int threadID, int timestep, int start[3], int end[3]);
 	virtual void Apply2Current(int threadID, int timestep, int start[3], int end[3]);
+	virtual void InitializeTiling(std::vector<Range3D> tiles) {}
 
 protected:
 	Operator_Ext_Excitation* m_Op_Exc;

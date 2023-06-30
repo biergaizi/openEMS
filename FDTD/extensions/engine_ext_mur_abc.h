@@ -21,6 +21,7 @@
 #include "engine_extension.h"
 #include "FDTD/engine.h"
 #include "FDTD/operator.h"
+#include "tools/TileMap.h"
 
 class Operator_Ext_Mur_ABC;
 
@@ -31,18 +32,20 @@ public:
 	virtual ~Engine_Ext_Mur_ABC();
 
 	virtual void SetNumberOfThreads(int nrThread);
+	virtual void InitializeTiling(std::vector<Range3D> tiles);
 
-	virtual void DoPreVoltageUpdates() {Engine_Ext_Mur_ABC::DoPreVoltageUpdates(0);}
-	virtual void DoPreVoltageUpdates(int threadID);
-	virtual void DoPostVoltageUpdates() {Engine_Ext_Mur_ABC::DoPostVoltageUpdates(0);}
-	virtual void DoPostVoltageUpdates(int threadID);
-	virtual void Apply2Voltages() {Engine_Ext_Mur_ABC::Apply2Voltages(0);}
-	virtual void Apply2Voltages(int threadID);
+	virtual void DoPreVoltageUpdates() {Engine_Ext_Mur_ABC::DoPreVoltageUpdates(0, -1, NULL, NULL);}
+	virtual void DoPreVoltageUpdates(int threadID, int timestep, int start[3], int end[3]);
+	virtual void DoPostVoltageUpdates() {Engine_Ext_Mur_ABC::DoPostVoltageUpdates(0, -1, NULL, NULL);}
+	virtual void DoPostVoltageUpdates(int threadID, int timestep, int start[3], int end[3]);
+	virtual void Apply2Voltages() {Engine_Ext_Mur_ABC::Apply2Voltages(0, -1, NULL, NULL);}
+	virtual void Apply2Voltages(int threadID, int timestep, int start[3], int end[3]);
 
 protected:
 	Operator_Ext_Mur_ABC* m_Op_mur;
 
-	inline bool IsActive() {if (m_Eng->GetNumberOfTimesteps()<m_start_TS) return false; return true;}
+	inline bool IsActive(int timestep) {if (timestep<m_start_TS) return false; return true;}
+	bool InsideTile(int start[3], int end[3], int mur_x, int mur_y, int mur_z);
 	unsigned int m_start_TS;
 
 	int m_ny;
@@ -50,6 +53,8 @@ protected:
 	unsigned int m_LineNr;
 	int m_LineNr_Shift;
 	unsigned int m_numLines[2];
+
+	std::unordered_map<TileKey, std::vector<std::pair<int, int>>, TileKeyHash> m_volt_map;
 
 	vector<unsigned int> m_start;
 	vector<unsigned int> m_numX;
