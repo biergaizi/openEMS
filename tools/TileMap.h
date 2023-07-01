@@ -16,6 +16,7 @@
  */
 
 #include <iostream>
+#include <array>
 #include <tuple>
 #include <unordered_map>
 #include <boost/container_hash/extensions.hpp>
