@@ -26,6 +26,9 @@
 Engine_Ext_Mur_ABC::Engine_Ext_Mur_ABC(Operator_Ext_Mur_ABC* op_ext) : Engine_Extension(op_ext)
 {
 	m_Op_mur = op_ext;
+
+	m_TilingSupported = true;
+
 	m_numLines[0] = m_Op_mur->m_numLines[0];
 	m_numLines[1] = m_Op_mur->m_numLines[1];
 	m_ny = m_Op_mur->m_ny;
@@ -81,6 +84,69 @@ void Engine_Ext_Mur_ABC::SetNumberOfThreads(int nrThread)
 		m_start.at(n) = m_start.at(n-1) + m_numX.at(n-1);
 }
 
+// Whether the cell (mur_x, mur_y, mur_z) is inside the
+// tile that is currently being processed.
+bool Engine_Ext_Mur_ABC::InsideTile(
+	unsigned int start[3], unsigned int stop[3],
+	unsigned int mur_x, unsigned int mur_y, unsigned int mur_z
+)
+{
+	if (mur_x < start[0] || mur_x > stop[0])
+		return false;
+	else if (mur_y < start[1] || mur_y > stop[1])
+		return false;
+	else if (mur_z < start[2] || mur_z > stop[2])
+		return false;
+	else
+		return true;
+}
+
+void Engine_Ext_Mur_ABC::InitializeTiling(std::vector<Range3D> tiles)
+{
+	for (auto& tile : tiles)
+	{
+		unsigned int pos[] = {0,0,0};
+		unsigned int pos_shift[] = {0,0,0};
+		pos[m_ny] = m_LineNr;
+		pos_shift[m_ny] = m_LineNr_Shift;
+
+		unsigned int *start = (unsigned int *) tile.voltageStart;
+		unsigned int *stop  = (unsigned int *) tile.voltageStop;
+
+		m_volt_map[GetTileKey(-1, start, stop)].clear();
+
+		for (unsigned int lineX=0; lineX<m_numLines[0]; ++lineX)
+		{
+			pos[m_nyP]=lineX;
+			pos_shift[m_nyP] = pos[m_nyP];
+			for (pos[m_nyPP]=0; pos[m_nyPP]<m_numLines[1]; ++pos[m_nyPP])
+			{
+				pos_shift[m_nyPP] = pos[m_nyPP];
+
+				if ((!InsideTile(start, stop, pos[0], pos[1], pos[2])) &&
+				    (!InsideTile(start, stop, pos_shift[0], pos_shift[1], pos_shift[2])))
+				{
+					continue;
+				}
+				else if ((InsideTile(start, stop, pos[0], pos[1], pos[2])) &&
+					 (InsideTile(start, stop, pos_shift[0], pos_shift[1], pos_shift[2])))
+				{
+					std::pair<int, int> nyp_nyPP_pair;
+					nyp_nyPP_pair.first = pos[m_nyP];
+					nyp_nyPP_pair.second = pos[m_nyPP];
+
+					m_volt_map[GetTileKey(-1, start, stop)].push_back(nyp_nyPP_pair);
+				}
+				else {
+					// one cell is inside the tile, but another cell is not!
+					// This is unsafe, Mur's ABC cannot be calculated.
+					std::cerr << "Error: Unsupported tiling partitioning for Mur ABC detected!" << std::endl;
+					std::exit(1);
+				}
+			}
+		}
+	}
+}
 
 void Engine_Ext_Mur_ABC::DoPreVoltageUpdates(int threadID)
 {
@@ -260,4 +326,75 @@ void Engine_Ext_Mur_ABC::Apply2Voltages(int threadID)
 		break;
 	}
 
+}
+
+void Engine_Ext_Mur_ABC::DoPreVoltageUpdates(int timestep, unsigned int start[3], unsigned int stop[3])
+{
+	if (IsActive(timestep)==false) return;
+	if (m_Eng==NULL) return;
+
+	unsigned int pos[] = {0,0,0};
+	unsigned int pos_shift[] = {0,0,0};
+	pos[m_ny] = m_LineNr;
+	pos_shift[m_ny] = m_LineNr_Shift;
+
+	auto vec = m_volt_map[GetTileKey(-1, start, stop)];
+
+	Engine_sse* eng_sse = (Engine_sse*) m_Eng;
+	for (auto& pair : vec)
+	{
+		pos[m_nyP] = pair.first;
+		pos[m_nyPP] = pair.second;
+		pos_shift[m_nyP] = pair.first;
+		pos_shift[m_nyPP] = pair.second;
+
+		m_volt_nyP[pos[m_nyP]][pos[m_nyPP]] = eng_sse->Engine_sse::GetVolt(m_nyP,pos_shift) - m_Op_mur->m_Mur_Coeff_nyP[pos[m_nyP]][pos[m_nyPP]] * eng_sse->Engine_sse::GetVolt(m_nyP,pos);
+		m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]] = eng_sse->Engine_sse::GetVolt(m_nyPP,pos_shift) - m_Op_mur->m_Mur_Coeff_nyPP[pos[m_nyP]][pos[m_nyPP]] * eng_sse->Engine_sse::GetVolt(m_nyPP,pos);
+	}
+}
+
+void Engine_Ext_Mur_ABC::DoPostVoltageUpdates(int timestep, unsigned int start[3], unsigned int stop[3])
+{
+	if (IsActive(timestep)==false) return;
+	if (m_Eng==NULL) return;
+
+	unsigned int pos[] = {0,0,0};
+	unsigned int pos_shift[] = {0,0,0};
+	pos[m_ny] = m_LineNr;
+	pos_shift[m_ny] = m_LineNr_Shift;
+
+	auto vec = m_volt_map[GetTileKey(-1, start, stop)];
+
+	Engine_sse* eng_sse = (Engine_sse*) m_Eng;
+	for (auto& pair : vec)
+	{
+		pos[m_nyP] = pair.first;
+		pos[m_nyPP] = pair.second;
+		pos_shift[m_nyP] = pair.first;
+		pos_shift[m_nyPP] = pair.second;
+
+		m_volt_nyP[pos[m_nyP]][pos[m_nyPP]] += m_Op_mur->m_Mur_Coeff_nyP[pos[m_nyP]][pos[m_nyPP]] * eng_sse->Engine_sse::GetVolt(m_nyP,pos_shift);
+		m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]] += m_Op_mur->m_Mur_Coeff_nyPP[pos[m_nyP]][pos[m_nyPP]] * eng_sse->Engine_sse::GetVolt(m_nyPP,pos_shift);
+	}
+}
+
+void Engine_Ext_Mur_ABC::Apply2Voltages(int timestep, unsigned int start[3], unsigned int stop[3])
+{
+	if (IsActive(timestep)==false) return;
+	if (m_Eng==NULL) return;
+
+	unsigned int pos[] = {0,0,0};
+	pos[m_ny] = m_LineNr;
+
+	auto vec = m_volt_map[GetTileKey(-1, start, stop)];
+
+	Engine_sse* eng_sse = (Engine_sse*) m_Eng;
+	for (auto& pair : vec)
+	{
+		pos[m_nyP] = pair.first;
+		pos[m_nyPP] = pair.second;
+
+		eng_sse->Engine_sse::SetVolt(m_nyP,pos, m_volt_nyP[pos[m_nyP]][pos[m_nyPP]]);
+		eng_sse->Engine_sse::SetVolt(m_nyPP,pos, m_volt_nyPP[pos[m_nyP]][pos[m_nyPP]]);
+	}
 }
