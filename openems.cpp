@@ -82,7 +82,7 @@ openEMS::openEMS()
 	m_OverSampling = 4;
 	m_CellConstantMaterial=false;
 
-	m_engine = EngineType_Multithreaded; //default engine type
+	m_engine = EngineType_Tiling; //default engine type
 	m_engine_numThreads = 0;
 
 	m_Abort = false;
@@ -232,8 +232,8 @@ bool openEMS::parseCommandLineArgument( const char *argv )
 	}
 	else if (strcmp(argv,"--engine=fastest")==0)
 	{
-		cout << "openEMS - enabled multithreading engine" << endl;
-		m_engine = EngineType_Multithreaded;
+		cout << "openEMS - enabled spatial/temporal tiling engine" << endl;
+		m_engine = EngineType_Tiling;
 		return true;
 	}
 	else if (strcmp(argv,"--no-simulation")==0)
