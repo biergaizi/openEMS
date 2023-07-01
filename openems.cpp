@@ -25,6 +25,7 @@
 #include "FDTD/operator_cylindermultigrid.h"
 #include "FDTD/engine_multithread.h"
 #include "FDTD/operator_multithread.h"
+#include "FDTD/operator_tiling.h"
 #include "FDTD/extensions/operator_ext_excitation.h"
 #include "FDTD/extensions/operator_ext_tfsf.h"
 #include "FDTD/extensions/operator_ext_mur_abc.h"
@@ -215,6 +216,12 @@ bool openEMS::parseCommandLineArgument( const char *argv )
 	{
 		cout << "openEMS - enabled multithreading" << endl;
 		m_engine = EngineType_Multithreaded;
+		return true;
+	}
+	else if (strcmp(argv,"--engine=tiling")==0)
+	{
+		cout << "openEMS - enabled spatial/temporal tiling engine" << endl;
+		m_engine = EngineType_Tiling;
 		return true;
 	}
 	else if (strncmp(argv,"--numThreads=",13)==0)
@@ -628,6 +635,10 @@ bool openEMS::SetupOperator()
 	else if (m_engine == EngineType_Multithreaded)
 	{
 		FDTD_Op = Operator_Multithread::New(m_engine_numThreads);
+	}
+	else if (m_engine == EngineType_Tiling)
+	{
+		FDTD_Op = Operator_Tiling::New(m_engine_numThreads);
 	}
 	else
 	{

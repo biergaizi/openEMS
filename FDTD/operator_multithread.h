@@ -32,6 +32,7 @@
 class Operator_Multithread : public OPERATOR_MULTITHREAD_BASE
 {
 	friend class Engine_Multithread;
+	friend class Engine_Tiling;
 	friend class Operator_Thread;
 public:
 	//! Create a new operator

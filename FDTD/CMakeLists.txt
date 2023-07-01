@@ -13,6 +13,7 @@ set(SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/engine.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/operator.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/engine_multithread.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/engine_tiling.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/operator_cylinder.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/engine_cylinder.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/engine_sse.cpp
@@ -20,6 +21,7 @@ set(SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/operator_sse_compressed.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/engine_sse_compressed.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/operator_multithread.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/operator_tiling.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/excitation.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/operator_cylindermultigrid.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/engine_cylindermultigrid.cpp

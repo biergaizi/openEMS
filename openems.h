@@ -150,7 +150,7 @@ protected:
 #ifdef MPI_SUPPORT
 	enum EngineType {EngineType_Basic, EngineType_SSE, EngineType_SSE_Compressed, EngineType_Multithreaded, EngineType_MPI};
 #else
-	enum EngineType {EngineType_Basic, EngineType_SSE, EngineType_SSE_Compressed, EngineType_Multithreaded};
+	enum EngineType {EngineType_Basic, EngineType_SSE, EngineType_SSE_Compressed, EngineType_Multithreaded, EngineType_Tiling};
 #endif
 	EngineType m_engine;
 	unsigned int m_engine_numThreads;
