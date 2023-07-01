@@ -21,6 +21,8 @@
 
 Engine_Ext_Dispersive::Engine_Ext_Dispersive(Operator_Ext_Dispersive* op_ext_disp) : Engine_Extension(op_ext_disp)
 {
+	m_TilingSupported = true;
+
 	m_Op_Ext_Disp = op_ext_disp;
 	int order = m_Op_Ext_Disp->m_Order;
 	curr_ADE = new FDTD_FLOAT**[order];
@@ -71,6 +73,88 @@ Engine_Ext_Dispersive::~Engine_Ext_Dispersive()
 
 	delete[] volt_ADE;
 	volt_ADE=NULL;
+
+	for (auto& it : m_volt_map)
+	{
+		auto& vec = it.second;
+		vec.clear();
+	}
+
+	for (auto& it : m_volt_map)
+	{
+		auto& vec = it.second;
+		vec.clear();
+	}
+}
+
+void Engine_Ext_Dispersive::InitializeTiling(std::vector<Range3D> tiles)
+{
+	unsigned int start[3];
+	unsigned int stop[3];
+
+	std::cerr << "Engine_Ext_Dispersive::InitializeTiling" << std::endl;
+
+	for (auto& tile : tiles)
+	{
+		for (int o = 0; o < m_Order; ++o)
+		{
+			if (m_Op_Ext_Disp->m_volt_ADE_On[o]==false)
+				continue;
+
+			unsigned int **pos = m_Op_Ext_Disp->m_LM_pos[o];
+			unsigned int *start = (unsigned int *) tile.voltageStart;
+			unsigned int *stop  = (unsigned int *) tile.voltageStop;
+
+			m_volt_map[GetTileKey(o, start, stop)].clear();
+
+			for (unsigned int i=0; i<m_Op_Ext_Disp->m_LM_Count.at(o); ++i)
+			{
+				if (InsideTile(start, stop, pos[0][i], pos[1][i], pos[2][i]))
+				{
+					m_volt_map[GetTileKey(o, start, stop)].push_back(i);
+				}
+			}
+		}
+
+		for (int o = 0; o < m_Order; ++o)
+		{
+			if (m_Op_Ext_Disp->m_curr_ADE_On[o]==false)
+				continue;
+
+			unsigned int **pos = m_Op_Ext_Disp->m_LM_pos[o];
+			unsigned int *start = (unsigned int *) tile.currentStart;
+			unsigned int *stop  = (unsigned int *) tile.currentStop;
+
+			m_curr_map[GetTileKey(o, start, stop)].clear();
+
+			for (unsigned int i=0; i<m_Op_Ext_Disp->m_LM_Count.at(o); ++i)
+			{
+				if (InsideTile(start, stop, pos[0][i], pos[1][i], pos[2][i]))
+				{
+					m_curr_map[GetTileKey(o, start, stop)].push_back(i);
+				}
+			}
+		}
+	}
+
+	std::cerr << "Engine_Ext_Dispersive::InitializeTiling done" << std::endl;
+}
+
+// Whether the ADE cell (ade_x, ade_y, ade_z) is inside the
+// tile that is currently being processed.
+bool Engine_Ext_Dispersive::InsideTile(
+	unsigned int start[3], unsigned int stop[3],
+	unsigned int ade_x, unsigned int ade_y, unsigned int ade_z
+)
+{
+	if (ade_x < start[0] || ade_x > stop[0])
+		return false;
+	else if (ade_y < start[1] || ade_y > stop[1])
+		return false;
+	else if (ade_z < start[2] || ade_z > stop[2])
+		return false;
+	else
+		return true;
 }
 
 void Engine_Ext_Dispersive::Apply2Voltages()
@@ -157,6 +241,44 @@ void Engine_Ext_Dispersive::Apply2Current()
 				m_Eng->SetCurr(2,pos[0][i],pos[1][i],pos[2][i], m_Eng->GetCurr(2,pos[0][i],pos[1][i],pos[2][i]) - curr_ADE[o][2][i]);
 			}
 			break;
+		}
+	}
+}
+
+void Engine_Ext_Dispersive::Apply2Voltages(int timestep, unsigned int start[3], unsigned int stop[3])
+{
+	for (int o=0;o<m_Op_Ext_Disp->m_Order;++o)
+	{
+		if (m_Op_Ext_Disp->m_volt_ADE_On[o]==false) continue;
+
+		auto vec = m_volt_map[GetTileKey(o, start, stop)];
+		unsigned int **pos = m_Op_Ext_Disp->m_LM_pos[o];
+
+		Engine_sse* eng_sse = (Engine_sse*)m_Eng;
+		for (auto& i : vec)
+		{
+			eng_sse->Engine_sse::SetVolt(0,pos[0][i],pos[1][i],pos[2][i], eng_sse->Engine_sse::GetVolt(0,pos[0][i],pos[1][i],pos[2][i]) - volt_ADE[o][0][i]);
+			eng_sse->Engine_sse::SetVolt(1,pos[0][i],pos[1][i],pos[2][i], eng_sse->Engine_sse::GetVolt(1,pos[0][i],pos[1][i],pos[2][i]) - volt_ADE[o][1][i]);
+			eng_sse->Engine_sse::SetVolt(2,pos[0][i],pos[1][i],pos[2][i], eng_sse->Engine_sse::GetVolt(2,pos[0][i],pos[1][i],pos[2][i]) - volt_ADE[o][2][i]);
+		}
+	}
+}
+
+void Engine_Ext_Dispersive::Apply2Current(int timestep, unsigned int start[3], unsigned int stop[3])
+{
+	for (int o=0;o<m_Op_Ext_Disp->m_Order;++o)
+	{
+		if (m_Op_Ext_Disp->m_curr_ADE_On[o]==false) continue;
+
+		auto vec = m_curr_map[GetTileKey(o, start, stop)];
+		unsigned int **pos = m_Op_Ext_Disp->m_LM_pos[o];
+
+		Engine_sse* eng_sse = (Engine_sse*)m_Eng;
+		for (auto& i : vec)
+		{
+			eng_sse->Engine_sse::SetCurr(0,pos[0][i],pos[1][i],pos[2][i], eng_sse->Engine_sse::GetCurr(0,pos[0][i],pos[1][i],pos[2][i]) - curr_ADE[o][0][i]);
+			eng_sse->Engine_sse::SetCurr(1,pos[0][i],pos[1][i],pos[2][i], eng_sse->Engine_sse::GetCurr(1,pos[0][i],pos[1][i],pos[2][i]) - curr_ADE[o][1][i]);
+			eng_sse->Engine_sse::SetCurr(2,pos[0][i],pos[1][i],pos[2][i], eng_sse->Engine_sse::GetCurr(2,pos[0][i],pos[1][i],pos[2][i]) - curr_ADE[o][2][i]);
 		}
 	}
 }
