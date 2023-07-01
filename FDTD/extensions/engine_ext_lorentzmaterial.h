@@ -29,8 +29,11 @@ public:
 	virtual ~Engine_Ext_LorentzMaterial();
 
 	virtual void DoPreVoltageUpdates();
-
 	virtual void DoPreCurrentUpdates();
+
+	virtual void InitializeTiling(std::vector<Range3D> tiles);
+	virtual void DoPreVoltageUpdates(int timestep, unsigned int start[3], unsigned int stop[3]);
+	virtual void DoPreCurrentUpdates(int timestep, unsigned int start[3], unsigned int stop[3]);
 
 protected:
 	Operator_Ext_LorentzMaterial* m_Op_Ext_Lor;
@@ -43,6 +46,9 @@ protected:
 	// Array setup: curr_Lor_ADE[N_order][direction][mesh_pos]
 	FDTD_FLOAT ***curr_Lor_ADE;
 
+private:
+	TileMap m_volt_map;
+	TileMap m_curr_map;
 };
 
 #endif // ENGINE_EXT_LORENTZMATERIAL_H

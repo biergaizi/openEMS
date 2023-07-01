@@ -74,6 +74,70 @@ Engine_Ext_LorentzMaterial::~Engine_Ext_LorentzMaterial()
 
 	delete[] volt_Lor_ADE;
 	volt_Lor_ADE=NULL;
+
+	for (auto& it : m_volt_map)
+	{
+		auto& vec = it.second;
+		vec.clear();
+	}
+
+	for (auto& it : m_volt_map)
+	{
+		auto& vec = it.second;
+		vec.clear();
+	}
+}
+
+void Engine_Ext_LorentzMaterial::InitializeTiling(std::vector<Range3D> tiles)
+{
+	Engine_Ext_Dispersive::InitializeTiling(tiles);
+
+	std::cerr << "Engine_Ext_LorentzMaterial::InitializeTiling" << std::endl;
+
+	for (auto& tile : tiles)
+	{
+		for (int o = 0; o < m_Order; ++o)
+		{
+			if (m_Op_Ext_Lor->m_volt_ADE_On[o]==false)
+				continue;
+
+			unsigned int **pos = m_Op_Ext_Lor->m_LM_pos[o];
+			unsigned int *start = (unsigned int *) tile.voltageStart;
+			unsigned int *stop  = (unsigned int *) tile.voltageStop;
+
+			m_volt_map[GetTileKey(o, start, stop)].clear();
+
+			for (unsigned int i=0; i<m_Op_Ext_Lor->m_LM_Count.at(o); ++i)
+			{
+				if (InsideTile(start, stop, pos[0][i], pos[1][i], pos[2][i]))
+				{
+					m_volt_map[GetTileKey(o, start, stop)].push_back(i);
+				}
+			}
+		}
+
+		for (int o = 0; o < m_Order; ++o)
+		{
+			if (m_Op_Ext_Lor->m_curr_ADE_On[o]==false)
+				continue;
+
+			unsigned int **pos = m_Op_Ext_Lor->m_LM_pos[o];
+			unsigned int *start = (unsigned int *) tile.currentStart;
+			unsigned int *stop  = (unsigned int *) tile.currentStop;
+
+			m_curr_map[GetTileKey(o, start, stop)].clear();
+
+			for (unsigned int i=0; i<m_Op_Ext_Lor->m_LM_Count.at(o); ++i)
+			{
+				if (InsideTile(start, stop, pos[0][i], pos[1][i], pos[2][i]))
+				{
+					m_curr_map[GetTileKey(o, start, stop)].push_back(i);
+				}
+			}
+		}
+	}
+
+	std::cerr << "Engine_Ext_LorentzMaterial::InitializeTiling done" << std::endl;
 }
 
 void Engine_Ext_LorentzMaterial::DoPreVoltageUpdates()
@@ -320,3 +384,93 @@ void Engine_Ext_LorentzMaterial::DoPreCurrentUpdates()
 	}
 }
 
+
+void Engine_Ext_LorentzMaterial::DoPreVoltageUpdates(int timestep, unsigned int start[3], unsigned int stop[3])
+{
+	for (int o=0;o<m_Order;++o)
+	{
+		if (m_Op_Ext_Lor->m_volt_ADE_On[o]==false) continue;
+
+		auto vec = m_volt_map[GetTileKey(o, start, stop)];
+		unsigned int **pos = m_Op_Ext_Lor->m_LM_pos[o];
+
+		Engine_sse* eng_sse = (Engine_sse*)m_Eng;
+
+		if (m_Op_Ext_Lor->m_volt_Lor_ADE_On[o])
+		{
+			for (auto& i : vec)
+			{
+				volt_Lor_ADE[o][0][i]+=m_Op_Ext_Lor->v_Lor_ADE[o][0][i]*volt_ADE[o][0][i];
+				volt_ADE[o][0][i] *= m_Op_Ext_Lor->v_int_ADE[o][0][i];
+				volt_ADE[o][0][i] += m_Op_Ext_Lor->v_ext_ADE[o][0][i] * (eng_sse->Engine_sse::GetVolt(0,pos[0][i],pos[1][i],pos[2][i])-volt_Lor_ADE[o][0][i]);
+
+				volt_Lor_ADE[o][1][i]+=m_Op_Ext_Lor->v_Lor_ADE[o][1][i]*volt_ADE[o][1][i];
+				volt_ADE[o][1][i] *= m_Op_Ext_Lor->v_int_ADE[o][1][i];
+				volt_ADE[o][1][i] += m_Op_Ext_Lor->v_ext_ADE[o][1][i] * (eng_sse->Engine_sse::GetVolt(1,pos[0][i],pos[1][i],pos[2][i])-volt_Lor_ADE[o][1][i]);
+
+				volt_Lor_ADE[o][2][i]+=m_Op_Ext_Lor->v_Lor_ADE[o][2][i]*volt_ADE[o][2][i];
+				volt_ADE[o][2][i] *= m_Op_Ext_Lor->v_int_ADE[o][2][i];
+				volt_ADE[o][2][i] += m_Op_Ext_Lor->v_ext_ADE[o][2][i] * (eng_sse->Engine_sse::GetVolt(2,pos[0][i],pos[1][i],pos[2][i])-volt_Lor_ADE[o][2][i]);
+			}
+		}
+		else
+		{
+			for (auto& i : vec)
+			{
+				volt_ADE[o][0][i] *= m_Op_Ext_Lor->v_int_ADE[o][0][i];
+				volt_ADE[o][0][i] += m_Op_Ext_Lor->v_ext_ADE[o][0][i] * eng_sse->Engine_sse::GetVolt(0,pos[0][i],pos[1][i],pos[2][i]);
+
+				volt_ADE[o][1][i] *= m_Op_Ext_Lor->v_int_ADE[o][1][i];
+				volt_ADE[o][1][i] += m_Op_Ext_Lor->v_ext_ADE[o][1][i] * eng_sse->Engine_sse::GetVolt(1,pos[0][i],pos[1][i],pos[2][i]);
+
+				volt_ADE[o][2][i] *= m_Op_Ext_Lor->v_int_ADE[o][2][i];
+				volt_ADE[o][2][i] += m_Op_Ext_Lor->v_ext_ADE[o][2][i] * eng_sse->Engine_sse::GetVolt(2,pos[0][i],pos[1][i],pos[2][i]);
+			}
+		}
+	}
+}
+
+void Engine_Ext_LorentzMaterial::DoPreCurrentUpdates(int timestep, unsigned int start[3], unsigned int stop[3])
+{
+	for (int o=0;o<m_Order;++o)
+	{
+		if (m_Op_Ext_Lor->m_curr_ADE_On[o]==false) continue;
+
+		auto vec = m_curr_map[GetTileKey(o, start, stop)];
+		unsigned int **pos = m_Op_Ext_Lor->m_LM_pos[o];
+
+		Engine_sse* eng_sse = (Engine_sse*)m_Eng;
+
+		if (m_Op_Ext_Lor->m_curr_Lor_ADE_On[o])
+		{
+			for (auto& i : vec)
+			{
+				curr_Lor_ADE[o][0][i]+=m_Op_Ext_Lor->i_Lor_ADE[o][0][i]*curr_ADE[o][0][i];
+				curr_ADE[o][0][i] *= m_Op_Ext_Lor->i_int_ADE[o][0][i];
+				curr_ADE[o][0][i] += m_Op_Ext_Lor->i_ext_ADE[o][0][i] * (eng_sse->Engine_sse::GetCurr(0,pos[0][i],pos[1][i],pos[2][i])-curr_Lor_ADE[o][0][i]);
+
+				curr_Lor_ADE[o][1][i]+=m_Op_Ext_Lor->i_Lor_ADE[o][1][i]*curr_ADE[o][1][i];
+				curr_ADE[o][1][i] *= m_Op_Ext_Lor->i_int_ADE[o][1][i];
+				curr_ADE[o][1][i] += m_Op_Ext_Lor->i_ext_ADE[o][1][i] * (eng_sse->Engine_sse::GetCurr(1,pos[0][i],pos[1][i],pos[2][i])-curr_Lor_ADE[o][1][i]);
+
+				curr_Lor_ADE[o][2][i]+=m_Op_Ext_Lor->i_Lor_ADE[o][2][i]*curr_ADE[o][2][i];
+				curr_ADE[o][2][i] *= m_Op_Ext_Lor->i_int_ADE[o][2][i];
+				curr_ADE[o][2][i] += m_Op_Ext_Lor->i_ext_ADE[o][2][i] * (eng_sse->Engine_sse::GetCurr(2,pos[0][i],pos[1][i],pos[2][i])-curr_Lor_ADE[o][2][i]);
+				}
+		}
+		else
+		{
+			for (auto& i : vec)
+			{
+				curr_ADE[o][0][i] *= m_Op_Ext_Lor->i_int_ADE[o][0][i];
+				curr_ADE[o][0][i] += m_Op_Ext_Lor->i_ext_ADE[o][0][i] * eng_sse->Engine_sse::GetCurr(0,pos[0][i],pos[1][i],pos[2][i]);
+
+				curr_ADE[o][1][i] *= m_Op_Ext_Lor->i_int_ADE[o][1][i];
+				curr_ADE[o][1][i] += m_Op_Ext_Lor->i_ext_ADE[o][1][i] * eng_sse->Engine_sse::GetCurr(1,pos[0][i],pos[1][i],pos[2][i]);
+
+				curr_ADE[o][2][i] *= m_Op_Ext_Lor->i_int_ADE[o][2][i];
+				curr_ADE[o][2][i] += m_Op_Ext_Lor->i_ext_ADE[o][2][i] * eng_sse->Engine_sse::GetCurr(2,pos[0][i],pos[1][i],pos[2][i]);
+			}
+		}
+	}
+}
