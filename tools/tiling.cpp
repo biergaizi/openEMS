@@ -1,21 +1,22 @@
 /*
  * Copyright (C) 2023 Yifeng Li <tomli@tomli.me>
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <cstdlib>
+#include <algorithm>
 #include "tiling.h"
 
 /*
@@ -196,9 +197,9 @@ std::vector<std::vector<Tiles3D>> computeRectangularTiles3D(
 	for (int phaseX = 0; phaseX < tilesX.phases; phaseX++) {
 		for (int phaseY = 0; phaseY < tilesY.phases; phaseY++) {
 			for (int phaseZ = 0; phaseZ < tilesZ.phases; phaseZ++) {
-				for (size_t x = 0; x < tilesX.array[phaseX].size(); x++) {
-					for (size_t y = 0; y < tilesY.array[phaseY].size(); y++) {
-						for (size_t z = 0; z < tilesZ.array[phaseZ].size(); z++) {
+				for (int x = 0; x < tilesX.array[phaseX].size(); x++) {
+					for (int y = 0; y < tilesY.array[phaseY].size(); y++) {
+						for (int z = 0; z < tilesZ.array[phaseZ].size(); z++) {
 							for (int t = 0; t < blkHalfTimesteps; t += 2) {
 								Range3D r;
 
@@ -648,9 +649,9 @@ Tiles3D combineTilesTo3D(Tiles tilesX, Tiles tilesY, Tiles tilesZ, int blkHalfTi
 	for (int phaseX = 0; phaseX < tilesX.phases; phaseX++) {
 		for (int phaseY = 0; phaseY < tilesY.phases; phaseY++) {
 			for (int phaseZ = 0; phaseZ < tilesZ.phases; phaseZ++) {
-				for (size_t x = 0; x < tilesX.array[phaseX].size(); x++) {
-					for (size_t y = 0; y < tilesY.array[phaseY].size(); y++) {
-						for (size_t z = 0; z < tilesZ.array[phaseZ].size(); z++) {
+				for (int x = 0; x < tilesX.array[phaseX].size(); x++) {
+					for (int y = 0; y < tilesY.array[phaseY].size(); y++) {
+						for (int z = 0; z < tilesZ.array[phaseZ].size(); z++) {
 							for (int t = 0; t < blkHalfTimesteps; t += 2) {
 								Range3D r;
 
@@ -729,16 +730,19 @@ std::vector<std::vector<Tiles3D>> combineTilesTo3D(
 	}
 
 	int phaseXYZ[3] = {0, 0, 0};  /* X, Y, Z */
+	int assignedThread = 0;
 	for (int phase = 0; phase < totalPhases; phase++) {
 		fprintf(stderr, "phase(%d, %d, %d)\n", phaseXYZ[0], phaseXYZ[1], phaseXYZ[2]);
-		int assignedThread = 0;
 		int phaseX = phaseXYZ[0];
 		int phaseY = phaseXYZ[1];
 		int phaseZ = phaseXYZ[2];
 
-		for (size_t x = 0; x < tilesX.array[phaseX].size(); x++) {
-			for (size_t y = 0; y < tilesY.array[phaseY].size(); y++) {
-				for (size_t z = 0; z < tilesZ.array[phaseZ].size(); z++) {
+		bool nonEmpty = false;
+		int addedTilesNum = 0;
+
+		for (int x = 0; x < tilesX.array[phaseX].size(); x++) {
+			for (int y = 0; y < tilesY.array[phaseY].size(); y++) {
+				for (int z = 0; z < tilesZ.array[phaseZ].size(); z++) {
 					for (int t = 0; t < blkHalfTimesteps; t += 2) {
 						Range3D r;
 
@@ -771,18 +775,37 @@ std::vector<std::vector<Tiles3D>> combineTilesTo3D(
 						}
 						if (!omit) {
 							tilesPerPhasePerThread[assignedThread][phase].push_back(r);
+							nonEmpty = true;
 						}
 					}
-					if (parallelAxis == 'Z') {
-						assignedThread = (assignedThread + 1) % numThreads;
+					if (parallelAxis == 'Z' && nonEmpty) {
+						addedTilesNum++;
+
+						if (addedTilesNum > tilesZ.array[phaseZ].size() / numThreads) {
+							assignedThread = (assignedThread + 1) % numThreads;
+							addedTilesNum = 0;
+						}
+						nonEmpty = false;
 					}
 				}
-				if (parallelAxis == 'Y') {
-					assignedThread = (assignedThread + 1) % numThreads;
+				if (parallelAxis == 'Y' && nonEmpty) {
+					addedTilesNum++;
+
+					if (addedTilesNum > tilesY.array[phaseY].size() / numThreads) {
+						assignedThread = (assignedThread + 1) % numThreads;
+						addedTilesNum = 0;
+					}
+					nonEmpty = false;
 				}
 			}
-			if (parallelAxis == 'X') {
-				assignedThread = (assignedThread + 1) % numThreads;
+			if (parallelAxis == 'X' && nonEmpty) {
+				addedTilesNum++;
+
+				if (addedTilesNum > tilesX.array[phaseX].size() / numThreads) {
+					assignedThread = (assignedThread + 1) % numThreads;
+					addedTilesNum = 0;
+				}
+				nonEmpty = false;
 			}
 		}
 
@@ -805,6 +828,42 @@ std::vector<std::vector<Tiles3D>> combineTilesTo3D(
 			 * No need to do anything if phaseX overflows, since the outer
 			 * for loop will terminate when it reaches totalPhases.
 			 */
+		}
+	}
+
+	/*
+	 * Tiling may be applied to only selected dimension, for example,
+	 * X and Y but not Z. In this case, there will be phases that is
+	 * empty across all thread. Delete them to avoid synchronization
+	 * overhead.
+	 */
+	std::vector<int> emptyPhaseList;
+	for (int phase = 0; phase < totalPhases; phase++) {
+		int removePhase = true;
+
+		for (int thread = 0; thread < numThreads; thread++) {
+			if (tilesPerPhasePerThread[thread][phase].size() > 0) {
+				removePhase = false;
+			}
+		}
+
+		if (removePhase) {
+			emptyPhaseList.push_back(phase);
+		}
+	}
+
+	for (auto& tilesPerPhase : tilesPerPhasePerThread) {
+		int phase = 0;
+		int maxPhase = tilesPerPhase.size();
+		int idxPhase = 0;
+		while (phase < maxPhase) {
+			if (std::find(emptyPhaseList.begin(), emptyPhaseList.end(), phase) != emptyPhaseList.end()) {
+				tilesPerPhase.erase(tilesPerPhase.begin() + idxPhase);
+			}
+			else {
+				idxPhase++;
+			}
+			phase++;
 		}
 	}
 
@@ -955,6 +1014,20 @@ void traceDiamondTilesExecution(void)
 	Tiles tilesZ = computeDiamondTiles1D(100, 10, 2);
 	Tiles3D tiles = combineTilesTo3D(tilesX, tilesY, tilesZ, 2);
 	traceTiles3D(tiles);
+}
+
+void showWorkPerThreads(std::vector<std::vector<Tiles3D>>& tilesPerStagePerThread)
+{
+	int thread = 0;
+
+	for (auto& tilesPerStage : tilesPerStagePerThread) {
+		fprintf(stderr, "thread %d: ", thread);
+		for (auto& tiles : tilesPerStage) {
+			fprintf(stderr, "%ld, ", tiles.size());
+		}
+		fprintf(stderr, "\n");
+		thread++;
+	}
 }
 
 int main(void)
