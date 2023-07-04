@@ -211,6 +211,18 @@ void Engine_Tiling::changeNumThreads(unsigned int numThreads)
 
 	fprintf(stderr, "hashing tiling\n");
 	InitializeTiling(tilesForAllThreads);
+
+	fprintf(stderr, "running with the follow tile partitioning...\n");
+	int thread = 0;
+
+	for (auto& tilesPerStage : tilesPerStagePerThread) {
+		fprintf(stderr, "thread %d: ", thread);
+		for (auto& tiles : tilesPerStage) {
+			fprintf(stderr, "%ld ", tiles.size());
+		}
+		fprintf(stderr, "\n");
+		thread++;
+	}
 }
 
 bool Engine_Tiling::IterateTS(unsigned int iterTS)
@@ -351,8 +363,6 @@ thread::thread(
 	m_threadID = threadID;
 	m_fallbackTiles = fallbackTiles;
 	m_blkTimesteps = blkTimesteps;
-
-	fprintf(stderr, "Tiles - Thread: %d / Tiles: %ld\n", threadID, tiles.size());
 }
 
 void thread::operator()()
