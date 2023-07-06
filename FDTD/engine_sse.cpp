@@ -39,6 +39,9 @@ Engine_sse::Engine_sse(const Operator_sse* op) : Engine(op)
 	f4_curr_ptr = 0;
 	numVectors =  ceil((double)numLines[2]/8.0);
 
+	libdivide::divider<unsigned int> fast_d(numVectors);
+	numVectorsFastDiv = fast_d;
+
 	// speed up the calculation of denormal floating point values (flush-to-zero)
 #ifndef SSE_CORRECT_DENORMALS
 	unsigned int oldMXCSR = _mm_getcsr(); //read the old MXCSR setting
