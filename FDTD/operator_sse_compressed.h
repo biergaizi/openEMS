@@ -45,15 +45,71 @@ public:
 
 	virtual Engine* CreateEngine();
 
-	inline virtual FDTD_FLOAT GetVV( unsigned int n, unsigned int x, unsigned int y, unsigned int z ) const { if (m_Use_Compression) return f4_vv_Compressed[n][m_Op_index[x][y][z%numVectors]].f[z/numVectors]; else return Operator_sse::GetVV(n,x,y,z);}
-	inline virtual FDTD_FLOAT GetVI( unsigned int n, unsigned int x, unsigned int y, unsigned int z ) const { if (m_Use_Compression) return f4_vi_Compressed[n][m_Op_index[x][y][z%numVectors]].f[z/numVectors]; else return Operator_sse::GetVI(n,x,y,z);}
-	inline virtual FDTD_FLOAT GetII( unsigned int n, unsigned int x, unsigned int y, unsigned int z ) const { if (m_Use_Compression) return f4_ii_Compressed[n][m_Op_index[x][y][z%numVectors]].f[z/numVectors]; else return Operator_sse::GetII(n,x,y,z);}
-	inline virtual FDTD_FLOAT GetIV( unsigned int n, unsigned int x, unsigned int y, unsigned int z ) const { if (m_Use_Compression) return f4_iv_Compressed[n][m_Op_index[x][y][z%numVectors]].f[z/numVectors]; else return Operator_sse::GetIV(n,x,y,z);}
+	inline virtual FDTD_FLOAT GetVV( unsigned int n, unsigned int x, unsigned int y, unsigned int z ) const
+	{
+		Flat_3DArray<unsigned int> &m_Op_index = *m_Op_index_ptr;
+		if (m_Use_Compression)
+			return f4_vv_Compressed[n][m_Op_index(x, y, z%numVectors)].f[z/numVectors];
+		else
+			return Operator_sse::GetVV(n,x,y,z);
+	}
+	inline virtual FDTD_FLOAT GetVI( unsigned int n, unsigned int x, unsigned int y, unsigned int z ) const
+	{
+		Flat_3DArray<unsigned int> &m_Op_index = *m_Op_index_ptr;
+		if (m_Use_Compression)
+			return f4_vi_Compressed[n][m_Op_index(x, y, z%numVectors)].f[z/numVectors];
+		else
+			return Operator_sse::GetVI(n,x,y,z);
+	}
+	inline virtual FDTD_FLOAT GetII( unsigned int n, unsigned int x, unsigned int y, unsigned int z ) const
+	{
+		Flat_3DArray<unsigned int> &m_Op_index = *m_Op_index_ptr;
+		if (m_Use_Compression)
+			return f4_ii_Compressed[n][m_Op_index(x, y, z%numVectors)].f[z/numVectors];
+		else
+			return Operator_sse::GetII(n,x,y,z);
+	}
+	inline virtual FDTD_FLOAT GetIV( unsigned int n, unsigned int x, unsigned int y, unsigned int z ) const
+	{
+		Flat_3DArray<unsigned int> &m_Op_index = *m_Op_index_ptr;
+		if (m_Use_Compression)
+			return f4_iv_Compressed[n][m_Op_index(x, y, z%numVectors)].f[z/numVectors];
+		else
+			return Operator_sse::GetIV(n,x,y,z);
+	}
 
-	inline virtual void SetVV( unsigned int n, unsigned int x, unsigned int y, unsigned int z, FDTD_FLOAT value ) { if (m_Use_Compression) f4_vv_Compressed[n][m_Op_index[x][y][z%numVectors]].f[z/numVectors] = value; else Operator_sse::SetVV(n,x,y,z,value);}
-	inline virtual void SetVI( unsigned int n, unsigned int x, unsigned int y, unsigned int z, FDTD_FLOAT value ) { if (m_Use_Compression) f4_vi_Compressed[n][m_Op_index[x][y][z%numVectors]].f[z/numVectors] = value; else Operator_sse::SetVI(n,x,y,z,value);}
-	inline virtual void SetII( unsigned int n, unsigned int x, unsigned int y, unsigned int z, FDTD_FLOAT value ) { if (m_Use_Compression) f4_ii_Compressed[n][m_Op_index[x][y][z%numVectors]].f[z/numVectors] = value; else Operator_sse::SetII(n,x,y,z,value);}
-	inline virtual void SetIV( unsigned int n, unsigned int x, unsigned int y, unsigned int z, FDTD_FLOAT value ) { if (m_Use_Compression) f4_iv_Compressed[n][m_Op_index[x][y][z%numVectors]].f[z/numVectors] = value; else Operator_sse::SetIV(n,x,y,z,value);}
+	inline virtual void SetVV( unsigned int n, unsigned int x, unsigned int y, unsigned int z, FDTD_FLOAT value )
+	{
+		Flat_3DArray<unsigned int> &m_Op_index = *m_Op_index_ptr;
+		if (m_Use_Compression)
+			f4_vv_Compressed[n][m_Op_index(x, y, z%numVectors)].f[z/numVectors] = value;
+		else
+			Operator_sse::SetVV(n,x,y,z,value);
+	}
+	inline virtual void SetVI( unsigned int n, unsigned int x, unsigned int y, unsigned int z, FDTD_FLOAT value )
+	{
+		Flat_3DArray<unsigned int> &m_Op_index = *m_Op_index_ptr;
+		if (m_Use_Compression)
+			f4_vi_Compressed[n][m_Op_index(x, y, z%numVectors)].f[z/numVectors] = value;
+		else
+			Operator_sse::SetVI(n,x,y,z,value);
+	}
+	inline virtual void SetII( unsigned int n, unsigned int x, unsigned int y, unsigned int z, FDTD_FLOAT value )
+	{
+		Flat_3DArray<unsigned int> &m_Op_index = *m_Op_index_ptr;
+		if (m_Use_Compression)
+			f4_ii_Compressed[n][m_Op_index(x, y, z%numVectors)].f[z/numVectors] = value;
+		else
+			Operator_sse::SetII(n,x,y,z,value);
+	}
+	inline virtual void SetIV( unsigned int n, unsigned int x, unsigned int y, unsigned int z, FDTD_FLOAT value )
+	{
+		Flat_3DArray<unsigned int> &m_Op_index = *m_Op_index_ptr;
+		if (m_Use_Compression)
+			f4_iv_Compressed[n][m_Op_index(x, y, z%numVectors)].f[z/numVectors] = value;
+		else
+			Operator_sse::SetIV(n,x,y,z,value);
+	}
 
 	virtual void ShowStat() const;
 
@@ -73,7 +129,7 @@ protected:
 
 	// engine needs access
 public:
-	unsigned int*** m_Op_index;
+	Flat_3DArray<unsigned int>* m_Op_index_ptr;
 	vector<f4vector,aligned_allocator<f4vector> > f4_vv_Compressed[3]; //!< coefficient: calc new voltage from old voltage
 	vector<f4vector,aligned_allocator<f4vector> > f4_vi_Compressed[3]; //!< coefficient: calc new voltage from old current
 	vector<f4vector,aligned_allocator<f4vector> > f4_iv_Compressed[3]; //!< coefficient: calc new current from old voltage

@@ -47,6 +47,7 @@ void Engine_SSE_Compressed::UpdateVoltages(unsigned int start[3], unsigned int s
 
 	Flat_N_3DArray<f4vector> &f4_volt = *f4_volt_ptr;
 	Flat_N_3DArray<f4vector> &f4_curr = *f4_curr_ptr;
+	Flat_3DArray<unsigned int> &op_index = *Op->m_Op_index_ptr;
 
 	unsigned int pos[3];
 	bool shift[2];
@@ -61,7 +62,7 @@ void Engine_SSE_Compressed::UpdateVoltages(unsigned int start[3], unsigned int s
 			shift[1]=pos[1];
 			for (pos[2] = 1; pos[2] < numVectors; ++pos[2])
 			{
-				index = Op->m_Op_index[pos[0]][pos[1]][pos[2]];
+				index = op_index(pos[0], pos[1], pos[2]);
 				// x-polarization
 				f4_volt(0, pos[0], pos[1], pos[2]).v *=
 				    Op->f4_vv_Compressed[0][index].v;
@@ -98,7 +99,7 @@ void Engine_SSE_Compressed::UpdateVoltages(unsigned int start[3], unsigned int s
 
 			// for pos[2] = 0
 			// x-polarization
-			index = Op->m_Op_index[pos[0]][pos[1]][0];
+			index = op_index(pos[0], pos[1], 0);
 #ifdef __SSE2__
 			temp.v = (__m128)_mm_slli_si128(
 			             (__m128i)f4_curr(1, pos[0], pos[1], numVectors-1).v, 4
@@ -164,6 +165,7 @@ void Engine_SSE_Compressed::UpdateCurrents(unsigned int start[3], unsigned int s
 
 	Flat_N_3DArray<f4vector> &f4_volt = *f4_volt_ptr;
 	Flat_N_3DArray<f4vector> &f4_curr = *f4_curr_ptr;
+	Flat_3DArray<unsigned int> &op_index = *Op->m_Op_index_ptr;
 
 	unsigned int pos[3];
 	f4vector temp;
@@ -175,7 +177,7 @@ void Engine_SSE_Compressed::UpdateCurrents(unsigned int start[3], unsigned int s
 		{
 			for (pos[2] = start[2]; pos[2] < numVectors - 1; ++pos[2])
 			{
-				index = Op->m_Op_index[pos[0]][pos[1]][pos[2]];
+				index = op_index(pos[0], pos[1], pos[2]);
 				// x-pol
 				f4_curr(0, pos[0], pos[1], pos[2]).v *=
 				    Op->f4_ii_Compressed[0][index].v;
@@ -210,7 +212,7 @@ void Engine_SSE_Compressed::UpdateCurrents(unsigned int start[3], unsigned int s
 				    );
 			}
 
-			index = Op->m_Op_index[pos[0]][pos[1]][numVectors-1];
+			index = op_index(pos[0], pos[1], numVectors-1);
 			// for pos[2] = numVectors-1
 			// x-pol
 #ifdef __SSE2__

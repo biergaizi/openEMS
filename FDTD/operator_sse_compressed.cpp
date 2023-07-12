@@ -33,7 +33,7 @@ Operator_SSE_Compressed* Operator_SSE_Compressed::New()
 
 Operator_SSE_Compressed::Operator_SSE_Compressed() : Operator_sse()
 {
-	m_Op_index = NULL;
+	m_Op_index_ptr = NULL;
 	m_Use_Compression = false;	
 }
 
@@ -65,15 +65,15 @@ void Operator_SSE_Compressed::Init()
 {
 	Operator_sse::Init();
 	m_Use_Compression = false;
-	m_Op_index = NULL;
+	m_Op_index_ptr = NULL;
 }
 
 void Operator_SSE_Compressed::Delete()
 {
-	if (m_Op_index)
+	if (m_Op_index_ptr)
 	{
-		Delete3DArray<unsigned int>( m_Op_index, numLines );
-		m_Op_index = 0;
+		Delete_Flat_3DArray<unsigned int>( m_Op_index_ptr, numLines );
+		m_Op_index_ptr = 0;
 	}
 
 	m_Use_Compression = false;
@@ -105,7 +105,7 @@ void Operator_SSE_Compressed::InitOperator()
 	}
 
 	Operator_sse::InitOperator();
-	m_Op_index = Create3DArray<unsigned int>( numLines );
+	m_Op_index_ptr = Create_Flat_3DArray<unsigned int>( numLines );
 }
 
 void Operator_SSE_Compressed::ShowStat() const
@@ -128,6 +128,7 @@ bool Operator_SSE_Compressed::CompressOperator()
 	Flat_N_3DArray<f4vector> &f4_vi = *f4_vi_ptr;
 	Flat_N_3DArray<f4vector> &f4_iv = *f4_iv_ptr;
 	Flat_N_3DArray<f4vector> &f4_ii = *f4_ii_ptr;
+	Flat_3DArray<unsigned int> &m_Op_index = *m_Op_index_ptr;
 
 	unsigned int pos[3];
 	for (pos[0]=0; pos[0]<numLines[0]; ++pos[0])
@@ -156,13 +157,13 @@ bool Operator_SSE_Compressed::CompressOperator()
 						f4_ii_Compressed[n].push_back( ii[n] );
 					}
 					lookUpMap[c] = index;
-					m_Op_index[pos[0]][pos[1]][pos[2]] = index;
+					m_Op_index(pos[0], pos[1], pos[2]) = index;
 				}
 				else
 				{
 					// this operator is already in the list
 					unsigned int index = (*it).second;
-					m_Op_index[pos[0]][pos[1]][pos[2]] = index;
+					m_Op_index(pos[0], pos[1], pos[2]) = index;
 				}
 			}
 		}
