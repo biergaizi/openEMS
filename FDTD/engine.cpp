@@ -260,16 +260,30 @@ bool Engine::IterateTS(unsigned int iterTS)
 	for (unsigned int iter=0; iter<iterTS; ++iter)
 	{
 		//voltage updates with extensions
-		DoPreVoltageUpdates();
+		//std::cerr << "DoPreVoltageUpdates" << std::endl;
+		//DoPreVoltageUpdates();
+
+		//std::cerr << "UpdateVoltages" << std::endl;
 		UpdateVoltages(voltageStart, voltageEnd);
-		DoPostVoltageUpdates();
-		Apply2Voltages();
+
+		//std::cerr << "DoPostVoltageUpdates" << std::endl;
+		//DoPostVoltageUpdates();
+
+		//std::cerr << "Apply2Voltages" << std::endl;
+		//Apply2Voltages();
 
 		//current updates with extensions
-		DoPreCurrentUpdates();
+		//std::cerr << "DoPreVoltageUpdates" << std::endl;
+		//DoPreCurrentUpdates();
+
+		//std::cerr << "UpdateCurrents" << std::endl;
 		UpdateCurrents(currentStart, currentEnd);
-		DoPostCurrentUpdates();
-		Apply2Current();
+
+		//std::cerr << "DoPostCurrentUpdates" << std::endl;
+		//DoPostCurrentUpdates();
+
+		//std::cerr << "Apply2Current" << std::endl;
+		//Apply2Current();
 
 		++numTS;
 	}

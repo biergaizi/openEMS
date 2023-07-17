@@ -7,9 +7,17 @@ if (WITH_MPI)
      )
 endif()
 
+if (WITH_SYCL)
+  set(SYCL_SOURCES
+     ${CMAKE_CURRENT_SOURCE_DIR}/engine_sycl.cpp
+     ${CMAKE_CURRENT_SOURCE_DIR}/operator_sycl.cpp
+     )
+endif()
+
 set(SOURCES
   ${SOURCES}
   ${MPI_SOURCES}
+  ${SYCL_SOURCES}
   ${CMAKE_CURRENT_SOURCE_DIR}/engine.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/operator.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/engine_multithread.cpp

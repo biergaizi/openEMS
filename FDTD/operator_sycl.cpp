@@ -15,19 +15,19 @@
 *	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "engine_sse.h"
-#include "operator_sse.h"
+#include "engine_sycl.h"
+#include "operator_sycl.h"
 #include "tools/array_ops.h"
 
-Operator_sse* Operator_sse::New()
+Operator_sycl* Operator_sycl::New()
 {
-	cout << "Create FDTD operator (SSE)" << endl;
-	Operator_sse* op = new Operator_sse();
+	cout << "Create GPU-accelerated FDTD operator (SYCL)" << endl;
+	Operator_sycl* op = new Operator_sycl();
 	op->Init();
 	return op;
 }
 
-Operator_sse::Operator_sse() : Operator()
+Operator_sycl::Operator_sycl() : Operator()
 {
 	f4_vv_ptr = 0;
 	f4_vi_ptr = 0;
@@ -35,19 +35,19 @@ Operator_sse::Operator_sse() : Operator()
 	f4_ii_ptr = 0;
 }
 
-Operator_sse::~Operator_sse()
+Operator_sycl::~Operator_sycl()
 {
 	Delete();
 }
 
-Engine* Operator_sse::CreateEngine()
+Engine* Operator_sycl::CreateEngine()
 {
 	//! create a special sse-engine
-	m_Engine = Engine_sse::New(this);
+	m_Engine = Engine_sycl::New(this);
 	return m_Engine;
 }
 
-void Operator_sse::Init()
+void Operator_sycl::Init()
 {
 	Operator::Init();
 	f4_vv_ptr = 0;
@@ -56,35 +56,35 @@ void Operator_sse::Init()
 	f4_ii_ptr = 0;
 }
 
-void Operator_sse::Delete()
+void Operator_sycl::Delete()
 {
-	Delete_Flat_N_3DArray(f4_vv_ptr,numLines);
-	Delete_Flat_N_3DArray(f4_vi_ptr,numLines);
-	Delete_Flat_N_3DArray(f4_iv_ptr,numLines);
-	Delete_Flat_N_3DArray(f4_ii_ptr,numLines);
+	Delete_SYCL_N_3DArray(f4_vv_ptr,numLines);
+	Delete_SYCL_N_3DArray(f4_vi_ptr,numLines);
+	Delete_SYCL_N_3DArray(f4_iv_ptr,numLines);
+	Delete_SYCL_N_3DArray(f4_ii_ptr,numLines);
 	f4_vv_ptr = 0;
 	f4_vi_ptr = 0;
 	f4_iv_ptr = 0;
 	f4_ii_ptr = 0;
 }
 
-void Operator_sse::Reset()
+void Operator_sycl::Reset()
 {
 	Delete();
 	Operator::Reset();
 }
 
 
-void Operator_sse::InitOperator()
+void Operator_sycl::InitOperator()
 {
-	Delete_Flat_N_3DArray(f4_vv_ptr,numLines);
-	Delete_Flat_N_3DArray(f4_vi_ptr,numLines);
-	Delete_Flat_N_3DArray(f4_iv_ptr,numLines);
-	Delete_Flat_N_3DArray(f4_ii_ptr,numLines);
-	f4_vv_ptr = Create_Flat_N_3DArray<f4vector>(numLines);
-	f4_vi_ptr = Create_Flat_N_3DArray<f4vector>(numLines);
-	f4_iv_ptr = Create_Flat_N_3DArray<f4vector>(numLines);
-	f4_ii_ptr = Create_Flat_N_3DArray<f4vector>(numLines);
+	Delete_SYCL_N_3DArray(f4_vv_ptr,numLines);
+	Delete_SYCL_N_3DArray(f4_vi_ptr,numLines);
+	Delete_SYCL_N_3DArray(f4_iv_ptr,numLines);
+	Delete_SYCL_N_3DArray(f4_ii_ptr,numLines);
+	f4_vv_ptr = Create_SYCL_N_3DArray<sycl::float4>(m_sycl_queue, numLines);
+	f4_vi_ptr = Create_SYCL_N_3DArray<sycl::float4>(m_sycl_queue, numLines);
+	f4_iv_ptr = Create_SYCL_N_3DArray<sycl::float4>(m_sycl_queue, numLines);
+	f4_ii_ptr = Create_SYCL_N_3DArray<sycl::float4>(m_sycl_queue, numLines);
 
 	numVectors =  ceil((double)numLines[2]/4.0);
 }

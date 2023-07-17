@@ -22,7 +22,7 @@
 //! it's the responsibility of the caller to free the returned pointer
 Engine_sycl* Engine_sycl::New(const Operator_sycl* op)
 {
-	cout << "Create FDTD engine (SYCL)" << endl;
+	cout << "Create GPU-accelerated FDTD engine (SYCL)" << endl;
 	Engine_sycl* e = new Engine_sycl(op);
 	e->Init();
 	return e;
@@ -47,13 +47,15 @@ void Engine_sycl::Init()
 {
 	Engine::Init();
 
-	Delete_N_3DArray(volt,numLines);
+	//Delete_N_3DArray(volt,numLines);
 	volt=NULL; // not used
-	Delete_N_3DArray(curr,numLines);
+	//Delete_N_3DArray(curr,numLines);
 	curr=NULL; // not used
 
-	f4_volt_ptr = Create_SYCL_N_3DArray<f4vector>(numLines);
-	f4_curr_ptr = Create_SYCL_N_3DArray<f4vector>(numLines);
+	auto Q = Op->m_sycl_queue;
+
+	f4_volt_ptr = Create_SYCL_N_3DArray<sycl::float4>(Q, numLines);
+	f4_curr_ptr = Create_SYCL_N_3DArray<sycl::float4>(Q, numLines);
 }
 
 void Engine_sycl::Reset()
@@ -75,28 +77,49 @@ void Engine_sycl::UpdateVoltages(
 	unsigned int stop[3]
 )
 {
-	m_sycl_queue.submit([&](sycl::handler &h)
+	SYCL_N_3DArray<sycl::float4> &volt = *f4_volt_ptr;
+	SYCL_N_3DArray<sycl::float4> &curr = *f4_curr_ptr;
+	SYCL_N_3DArray<sycl::float4> &op_vv = *Op->f4_vv_ptr;
+	SYCL_N_3DArray<sycl::float4> &op_vi = *Op->f4_vi_ptr;
+	auto Q = Op->m_sycl_queue;
+
+	if (start[2] != 0 || stop[2] != numLines[2] - 1)
+	{
+		std::cerr << "tiling on the Z axis is currently unsupported" << std::endl;
+		std::exit(1);
+	}
+
+	/*
+	 * Ask the SYCL runtime to move the data to the GPU.
+	 * Performance-critical when using Unified Shared Memory.
+	 */
+	Q.prefetch(volt.array, volt.size);
+	Q.prefetch(curr.array, curr.size);
+	Q.prefetch(op_vv.array, op_vv.size);
+	Q.prefetch(op_vi.array, op_vi.size);
+
+	Q.submit([&](sycl::handler &h)
 	{
 		h.parallel_for<class Voltage>(
 			sycl::range(
-				stop[0] - start[0],
-				stop[1] - start[1],
-				stop[2] - start[2]
+				stop[0] - start[0] + 1,
+				stop[1] - start[1] + 1,
+				numVectors - 1
 			),
 			[=](sycl::item<3> itm)
 			{
 				/* this C++ lambda is the function body for GPU */
-				int x = itm.get_id(0) + start[0];
-				int y = itm.get_id(1) + start[1];
-				int z = itm.get_id(2) + start[2];
+				int x = itm.get_id(0);
+				int y = itm.get_id(1);
+				int z = itm.get_id(2) + 1;
 
-				UpdateVoltages(volt, curr, vv, vi, x, y, z);
+				UpdateVoltagesKernel(volt, curr, op_vv, op_vi, x, y, z);
 			}
 		);
 	});
 
 	/* block until the GPU finishes */
-	m_sycl_queue.wait();
+	Q.wait();
 }
 
 /*
@@ -120,6 +143,10 @@ void Engine_sycl::UpdateVoltagesKernel(
         int x, int y, int z
 )
 {
+	int prev_x = (x - 1 > 0) ? 1 : 0;
+	int prev_y = (y - 1 > 0) ? 1 : 0;
+	int prev_z = (z - 1 > 0) ? 1 : 0;
+
         // note: each (x, y, z) cell has three polarizations
         // x, y, z, these are different from the cell's
         // coordinates (x, y, z)
@@ -172,28 +199,49 @@ void Engine_sycl::UpdateCurrents(
 	unsigned int stop[3]
 )
 {
-	m_sycl_queue.submit([&](sycl::handler &h)
+	SYCL_N_3DArray<sycl::float4> &curr = *f4_curr_ptr;
+	SYCL_N_3DArray<sycl::float4> &volt = *f4_volt_ptr;
+	SYCL_N_3DArray<sycl::float4> &op_iv = *Op->f4_iv_ptr;
+	SYCL_N_3DArray<sycl::float4> &op_ii = *Op->f4_ii_ptr;
+	auto Q = Op->m_sycl_queue;
+
+	if (start[2] != 0 || stop[2] != numLines[2] - 2)
 	{
-		h.parallel_for<class Voltage>(
+		std::cerr << "tiling on the Z axis is currently unsupported" << std::endl;
+		std::exit(1);
+	}
+
+	/*
+	 * Ask the SYCL runtime to move the data to the GPU.
+	 * Performance-critical when using Unified Shared Memory.
+	 */
+	Q.prefetch(curr.array, curr.size);
+	Q.prefetch(volt.array, volt.size);
+	Q.prefetch(op_iv.array, op_iv.size);
+	Q.prefetch(op_ii.array, op_ii.size);
+
+	Q.submit([&](sycl::handler &h)
+	{
+		h.parallel_for<class Current>(
 			sycl::range(
 				stop[0] - start[0],
 				stop[1] - start[1],
-				stop[2] - start[2]
+				numVectors - 1
 			),
 			[=](sycl::item<3> itm)
 			{
 				/* this C++ lambda is the function body for GPU */
-				int x = itm.get_id(0) + start[0];
-				int y = itm.get_id(1) + start[1];
-				int z = itm.get_id(2) + start[2];
+				int x = itm.get_id(0);
+				int y = itm.get_id(1);
+				int z = itm.get_id(2);
 
-				UpdateCurrents(volt, curr, vv, vi, x, y, z);
+				UpdateCurrentsKernel(curr, volt, op_iv, op_ii, x, y, z);
 			}
 		);
 	});
 
 	/* block until the GPU finishes */
-	m_sycl_queue.wait();
+	Q.wait();
 }
 
 /*

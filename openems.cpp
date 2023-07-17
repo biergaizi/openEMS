@@ -26,6 +26,7 @@
 #include "FDTD/engine_multithread.h"
 #include "FDTD/operator_multithread.h"
 #include "FDTD/operator_tiling.h"
+#include "FDTD/operator_sycl.h"
 #include "FDTD/extensions/operator_ext_excitation.h"
 #include "FDTD/extensions/operator_ext_tfsf.h"
 #include "FDTD/extensions/operator_ext_mur_abc.h"
@@ -82,7 +83,7 @@ openEMS::openEMS()
 	m_OverSampling = 4;
 	m_CellConstantMaterial=false;
 
-	m_engine = EngineType_Tiling; //default engine type
+	m_engine = EngineType_SYCL; //default engine type
 	m_engine_numThreads = 0;
 
 	m_Abort = false;
@@ -224,6 +225,12 @@ bool openEMS::parseCommandLineArgument( const char *argv )
 		m_engine = EngineType_Tiling;
 		return true;
 	}
+	else if (strcmp(argv,"--engine=sycl")==0)
+	{
+		cout << "openEMS - enabled GPU-accelerated SYCL engine" << endl;
+		m_engine = EngineType_SYCL;
+		return true;
+	}
 	else if (strncmp(argv,"--numThreads=",13)==0)
 	{
 		this->SetNumberOfThreads(atoi(argv+13));
@@ -232,8 +239,8 @@ bool openEMS::parseCommandLineArgument( const char *argv )
 	}
 	else if (strcmp(argv,"--engine=fastest")==0)
 	{
-		cout << "openEMS - enabled spatial/temporal tiling engine" << endl;
-		m_engine = EngineType_Tiling;
+		cout << "openEMS - enabled GPU-accelerated SYCL engine" << endl;
+		m_engine = EngineType_SYCL;
 		return true;
 	}
 	else if (strcmp(argv,"--no-simulation")==0)
@@ -639,6 +646,10 @@ bool openEMS::SetupOperator()
 	else if (m_engine == EngineType_Tiling)
 	{
 		FDTD_Op = Operator_Tiling::New(m_engine_numThreads);
+	}
+	else if (m_engine == EngineType_SYCL)
+	{
+		FDTD_Op = Operator_sycl::New();
 	}
 	else
 	{
