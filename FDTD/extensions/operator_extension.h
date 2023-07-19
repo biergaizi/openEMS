@@ -26,6 +26,8 @@
 
 #include "tools/global.h"
 
+#include <sycl/sycl.hpp>
+
 class Operator;
 class Operator_Cylinder;
 class Engine_Extension;
@@ -48,6 +50,10 @@ public:
 
 	virtual Engine_Extension* CreateEngineExtention() {return 0;}
 	virtual Engine_Extension* GetEngineExtention() {return m_Eng_Ext;}
+
+	// In the GPU-accelerated SYCL engine, it's the responsibility of the operator
+	// to copy the necessary data the GPU.
+	virtual void InitializeSYCL(sycl::queue Q);
 
 	//! The cylindrical operator will check whether the extension is save to use. Default is false. Derive this method to override.
 	virtual bool IsCylinderCoordsSave(bool closedAlpha, bool R0_included) const {UNUSED(closedAlpha); UNUSED(R0_included); return false;}

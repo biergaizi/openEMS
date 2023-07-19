@@ -270,3 +270,184 @@ void Engine_Ext_Excitation::Apply2Current(int timestep, unsigned int start[3], u
 		eng_sse->Engine_sse::SetCurr(ny,pos, eng_sse->Engine_sse::GetCurr(ny,pos) + m_Op_Exc->Curr_amp[n]*exc_curr[exc_pos]);
 	}
 }
+
+void Engine_Ext_Excitation::InitializeSYCL(sycl::queue Q)
+{
+	m_Op_Exc->InitializeSYCL(Q);
+
+	unsigned int length = m_Op_Exc->m_Exc->GetLength();
+	FDTD_FLOAT* exc_volt =  m_Op_Exc->m_Exc->GetVoltageSignal();
+	FDTD_FLOAT* exc_curr =  m_Op_Exc->m_Exc->GetCurrentSignal();
+
+	FDTD_FLOAT* sycl_exc_volt = sycl::malloc_device<FDTD_FLOAT>(length, Q);
+	FDTD_FLOAT* sycl_exc_curr = sycl::malloc_device<FDTD_FLOAT>(length, Q);
+	Q.submit([&](sycl::handler& h) {
+		h.memcpy(sycl_exc_volt, exc_volt, length * sizeof(FDTD_FLOAT));
+	});
+	Q.submit([&](sycl::handler& h) {
+		h.memcpy(sycl_exc_curr, exc_curr, length * sizeof(FDTD_FLOAT));
+	});
+
+	/* TODO: free host memory */
+	exc_volt = sycl_exc_volt;
+	exc_curr = sycl_exc_curr;
+}
+
+void Engine_Ext_Excitation::Apply2Voltages(sycl::queue Q)
+{
+	if (m_Op_Exc->Volt_Count == 0)
+		return;
+	else
+	{
+		//std::cerr << "Apply2Voltages: apply ";
+		//std::cerr << m_Op_Exc->Volt_Count;
+		//std::cerr << "values" << std::endl;
+	}
+
+	int exc_pos;
+	unsigned int ny;
+	int numTS = m_Eng->GetNumberOfTimesteps();
+	unsigned int length = m_Op_Exc->m_Exc->GetLength();
+	FDTD_FLOAT* exc_volt =  m_Op_Exc->m_Exc->GetVoltageSignal();
+
+	int p = numTS+1;
+	if (m_Op_Exc->m_Exc->GetSignalPeriod()>0)
+		p = int(m_Op_Exc->m_Exc->GetSignalPeriod()/m_Op_Exc->m_Exc->GetTimestep());
+
+	Engine_sycl* eng_sycl = (Engine_sycl*) m_Eng;
+	unsigned int** Volt_index = m_Op_Exc->Volt_index;
+	unsigned short* Volt_dir = m_Op_Exc->Volt_dir;
+	FDTD_FLOAT* Volt_amp = m_Op_Exc->Volt_amp;
+	unsigned int* Volt_delay = m_Op_Exc->Volt_delay;
+
+	Q.submit([&](sycl::handler &h)
+	{
+		h.parallel_for<class ExcitationApply2Voltage>(
+			sycl::range(m_Op_Exc->Volt_Count),
+			[=](sycl::item<1> itm)
+			{
+				/* this C++ lambda is the function body for GPU */
+				int n = itm.get_id(0);
+				Apply2VoltagesSYCLKernel(
+					eng_sycl,
+					n, p,
+					numTS, length,
+					exc_volt, exc_pos,
+					Volt_index,
+					Volt_dir,
+					Volt_amp,
+					Volt_delay
+				);
+			}
+		);
+	});
+	Q.wait();
+}
+
+void Engine_Ext_Excitation::Apply2VoltagesSYCLKernel(
+	Engine_sycl* eng,
+	int n,
+	int p,
+	int numTS, int length,
+	FDTD_FLOAT* exc_volt, int exc_pos,
+	unsigned int* Volt_index[3],
+	unsigned short* Volt_dir,
+	FDTD_FLOAT* Volt_amp,
+	unsigned int* Volt_delay
+)
+{
+	unsigned int pos[3];
+	pos[0] = Volt_index[0][n];
+	pos[1] = Volt_index[1][n];
+	pos[2] = Volt_index[2][n];
+
+	exc_pos = numTS - (int) Volt_delay[n];
+	exc_pos *= (exc_pos > 0);
+	exc_pos %= p;
+	exc_pos *= (exc_pos < (int) length);
+	int ny = Volt_dir[n];
+	eng->Engine_sycl::SetVoltSYCL(
+		ny, pos,
+		eng->Engine_sycl::GetVoltSYCL(ny,pos) + Volt_amp[n] * exc_volt[exc_pos]
+	);
+}
+
+void Engine_Ext_Excitation::Apply2Current(sycl::queue Q)
+{
+	if (m_Op_Exc->Curr_Count == 0)
+		return;
+	else
+	{
+		//std::cerr << "Apply2Current: apply ";
+		//std::cerr << m_Op_Exc->Curr_Count;
+		//std::cerr << "values" << std::endl;
+	}
+
+	int exc_pos;
+	unsigned int ny;
+	int numTS = m_Eng->GetNumberOfTimesteps();
+	unsigned int length = m_Op_Exc->m_Exc->GetLength();
+	FDTD_FLOAT* exc_curr =  m_Op_Exc->m_Exc->GetCurrentSignal();
+
+	int p = numTS+1;
+	if (m_Op_Exc->m_Exc->GetSignalPeriod()>0)
+		p = int(m_Op_Exc->m_Exc->GetSignalPeriod()/m_Op_Exc->m_Exc->GetTimestep());
+
+	Engine_sycl* eng_sycl = (Engine_sycl*) m_Eng;
+	unsigned int** Curr_index = m_Op_Exc->Curr_index;
+	unsigned short* Curr_dir = m_Op_Exc->Curr_dir;
+	FDTD_FLOAT* Curr_amp = m_Op_Exc->Curr_amp;
+	unsigned int* Curr_delay = m_Op_Exc->Curr_delay;
+
+	Q.submit([&](sycl::handler &h)
+	{
+		h.parallel_for<class ExcitationApply2Current>(
+			sycl::range(m_Op_Exc->Curr_Count),
+			[=](sycl::item<1> itm)
+			{
+				/* this C++ lambda is the function body for GPU */
+				int n = itm.get_id(0);
+				Apply2CurrentSYCLKernel(
+					eng_sycl,
+					n, p,
+					numTS, length,
+					exc_curr, exc_pos,
+					Curr_index,
+					Curr_dir,
+					Curr_amp,
+					Curr_delay
+				);
+			}
+		);
+	});
+
+	Q.wait();
+}
+
+void Engine_Ext_Excitation::Apply2CurrentSYCLKernel(
+	Engine_sycl* eng,
+	int n,
+	int p,
+	int numTS, int length,
+	FDTD_FLOAT* exc_curr, int exc_pos,
+	unsigned int* Curr_index[3],
+	unsigned short* Curr_dir,
+	FDTD_FLOAT* Curr_amp,
+	unsigned int* Curr_delay
+)
+{
+	unsigned int pos[3];
+	pos[0] = Curr_index[0][n];
+	pos[1] = Curr_index[1][n];
+	pos[2] = Curr_index[2][n];
+
+	exc_pos = numTS - (int) Curr_delay[n];
+	exc_pos *= (exc_pos > 0);
+	exc_pos %= p;
+	exc_pos *= (exc_pos < (int) length);
+	int ny = Curr_dir[n];
+	eng->Engine_sycl::SetCurrSYCL(
+		ny, pos,
+		eng->Engine_sycl::GetCurrSYCL(ny,pos) + Curr_amp[n] * exc_curr[exc_pos]
+	);
+}

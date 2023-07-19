@@ -24,6 +24,56 @@
 #include <cstring>
 #include <ostream>
 
+#if 0
+
+/*
+ * 2DArray
+ */
+template <typename T>
+struct SYCL_2DArray
+{
+        inline T& operator() (const unsigned int x, const unsigned int y) const
+        {
+                return array[x * x_stride + y];
+        }
+
+        unsigned long x_stride, size;
+        T *array;
+};
+
+template <typename T>
+SYCL_N_3DArray<T>* Create_SYCL_N_3DArray(sycl::queue Q, const unsigned int* numLines)
+{
+        unsigned int x_max = numLines[0];
+        unsigned int y_max = numLines[1];
+
+        unsigned long x_stride = y_max;
+
+        // allocate 1D linear buffer
+        size_t size = n_stride * n_max;
+
+        T *buf = sycl::malloc_shared<T>(size, Q);
+	//sycl::mem_advise(buf, size * sizeof(T), hipMemAdviseSetPreferredLocation, Q);
+	//sycl::mem_advise(buf, size * sizeof(T), hipMemAdviseSetCoarseGrain, Q);
+
+	Q.submit([&](sycl::handler& h) {
+		h.memset(buf, 0, size * sizeof(T));
+	});
+	Q.wait();
+
+        // allocate wrapper class
+        SYCL_N_3DArray<T>* array = new SYCL_N_3DArray<T>();
+        array->x_stride = x_stride;
+        array->size = size * sizeof(T);
+        array->array = buf;
+
+        return array;
+}
+#endif
+
+/*
+ * N_3DArray
+ */
 template <typename T>
 struct SYCL_N_3DArray
 {
@@ -36,6 +86,11 @@ struct SYCL_N_3DArray
                            z
                        ];
         }
+
+	inline size_t offset(const unsigned int n, const unsigned int x, const unsigned int y, const unsigned int z) const
+	{
+		return n * n_stride + x * x_stride + y * y_stride + z;
+	}
 
         unsigned long n_stride, x_stride, y_stride, size;
         T *array;
@@ -62,8 +117,8 @@ SYCL_N_3DArray<T>* Create_SYCL_N_3DArray(sycl::queue Q, const unsigned int* numL
         size_t size = n_stride * n_max;
 
         T *buf = sycl::malloc_shared<T>(size, Q);
-	sycl::mem_advise(buf, size * sizeof(T), hipMemAdviseSetPreferredLocation, Q);
-	sycl::mem_advise(buf, size * sizeof(T), hipMemAdviseSetCoarseGrain, Q);
+	//sycl::mem_advise(buf, size * sizeof(T), hipMemAdviseSetPreferredLocation, Q);
+	//sycl::mem_advise(buf, size * sizeof(T), hipMemAdviseSetCoarseGrain, Q);
 
 	Q.submit([&](sycl::handler& h) {
 		h.memset(buf, 0, size * sizeof(T));
@@ -102,8 +157,8 @@ inline SYCL_N_3DArray<sycl::float4>* Create_SYCL_N_3DArray<sycl::float4>(sycl::q
         size_t size = n_stride * n_max;
 
         sycl::float4* buf = sycl::malloc_shared<sycl::float4>(size, Q);
-	sycl::mem_advise(buf, size * sizeof(sycl::float4), hipMemAdviseSetPreferredLocation, Q);
-	sycl::mem_advise(buf, size * sizeof(sycl::float4), hipMemAdviseSetCoarseGrain, Q);
+	//sycl::mem_advise(buf, size * sizeof(sycl::float4), hipMemAdviseSetPreferredLocation, Q);
+	//sycl::mem_advise(buf, size * sizeof(sycl::float4), hipMemAdviseSetCoarseGrain, Q);
 
 	Q.submit([&](sycl::handler& h) {
 		h.memset(buf, 0, size * sizeof(sycl::float4));

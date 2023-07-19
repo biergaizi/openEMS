@@ -23,6 +23,7 @@
 #include "tools/useful.h"
 #include "FDTD/operator_cylinder.h"
 #include "FDTD/operator_cylindermultigrid.h"
+#include "FDTD/engine_sycl.h"
 #include "FDTD/engine_multithread.h"
 #include "FDTD/operator_multithread.h"
 #include "FDTD/operator_tiling.h"

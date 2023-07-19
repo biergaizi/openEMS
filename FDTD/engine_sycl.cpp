@@ -67,6 +67,17 @@ void Engine_sycl::Reset()
 	f4_curr_ptr = 0;
 }
 
+void Engine_sycl::InitExtensions()
+{
+	Engine::InitExtensions();
+
+	for (size_t n=0; n<m_Eng_exts.size(); ++n)
+		m_Eng_exts.at(n)->InitializeSYCL(Op->m_sycl_queue);
+
+	auto Q = Op->m_sycl_queue;
+	Q.wait();
+}
+
 /*
  * UpdateVoltages
  *
@@ -88,15 +99,6 @@ void Engine_sycl::UpdateVoltages(
 		std::cerr << "tiling on the Z axis is currently unsupported" << std::endl;
 		std::exit(1);
 	}
-
-	/*
-	 * Ask the SYCL runtime to move the data to the GPU.
-	 * Performance-critical when using Unified Shared Memory.
-	 */
-	Q.prefetch(volt.array, volt.size);
-	Q.prefetch(curr.array, curr.size);
-	Q.prefetch(op_vv.array, op_vv.size);
-	Q.prefetch(op_vi.array, op_vi.size);
 
 	Q.submit([&](sycl::handler &h)
 	{
@@ -211,15 +213,6 @@ void Engine_sycl::UpdateCurrents(
 		std::exit(1);
 	}
 
-	/*
-	 * Ask the SYCL runtime to move the data to the GPU.
-	 * Performance-critical when using Unified Shared Memory.
-	 */
-	Q.prefetch(curr.array, curr.size);
-	Q.prefetch(volt.array, volt.size);
-	Q.prefetch(op_iv.array, op_iv.size);
-	Q.prefetch(op_ii.array, op_ii.size);
-
 	Q.submit([&](sycl::handler &h)
 	{
 		h.parallel_for<class Current>(
@@ -305,4 +298,79 @@ void Engine_sycl::UpdateCurrentsKernel(
         curr(0, x, y, z) = curr0;
         curr(1, x, y, z) = curr1;
         curr(2, x, y, z) = curr2;
+}
+
+void Engine_sycl::Apply2Voltages(sycl::queue Q)
+{
+	//execute extensions in normal order -> highest priority gets access to the currents first
+	for (size_t n=0; n<m_Eng_exts.size(); ++n)
+		m_Eng_exts.at(n)->Apply2Voltages(Q);
+}
+
+void Engine_sycl::Apply2Current(sycl::queue Q)
+{
+	//execute extensions in normal order -> highest priority gets access to the currents first
+	for (size_t n=0; n<m_Eng_exts.size(); ++n)
+		m_Eng_exts.at(n)->Apply2Current(Q);
+}
+
+bool Engine_sycl::IterateTS(unsigned int iterTS)
+{
+	unsigned int voltageStart[3] = {0, 0, 0};
+	unsigned int voltageEnd[3]   = {numLines[0] - 1, numLines[1] - 1, numLines[2] - 1};
+
+	unsigned int currentStart[3] = {0, 0, 0};
+	unsigned int currentEnd[3]   = {numLines[0] - 2, numLines[1] - 2, numLines[2] - 2};
+
+	/*
+	 * Ask the SYCL runtime to move the data to the GPU.
+	 * Performance-critical when using Unified Shared Memory.
+	 */
+	SYCL_N_3DArray<sycl::float4> &volt = *f4_volt_ptr;
+	SYCL_N_3DArray<sycl::float4> &curr = *f4_curr_ptr;
+	SYCL_N_3DArray<sycl::float4> &op_vv = *Op->f4_vv_ptr;
+	SYCL_N_3DArray<sycl::float4> &op_vi = *Op->f4_vi_ptr;
+	SYCL_N_3DArray<sycl::float4> &op_iv = *Op->f4_iv_ptr;
+	SYCL_N_3DArray<sycl::float4> &op_ii = *Op->f4_ii_ptr;
+	auto Q = Op->m_sycl_queue;
+
+	Q.prefetch(volt.array, volt.size);
+	Q.prefetch(curr.array, curr.size);
+	Q.prefetch(op_vv.array, op_vv.size);
+	Q.prefetch(op_vi.array, op_vi.size);
+	Q.prefetch(op_iv.array, op_iv.size);
+	Q.prefetch(op_ii.array, op_ii.size);
+	Q.wait();
+
+	for (unsigned int iter=0; iter<iterTS; ++iter)
+	{
+		//voltage updates with extensions
+		//std::cerr << "DoPreVoltageUpdates" << std::endl;
+		DoPreVoltageUpdates();
+
+		//std::cerr << "UpdateVoltages" << std::endl;
+		UpdateVoltages(voltageStart, voltageEnd);
+
+		//std::cerr << "DoPostVoltageUpdates" << std::endl;
+		DoPostVoltageUpdates();
+
+		//std::cerr << "Apply2Voltages" << std::endl;
+		Apply2Voltages(Op->m_sycl_queue);
+
+		//current updates with extensions
+		//std::cerr << "DoPreVoltageUpdates" << std::endl;
+		DoPreCurrentUpdates();
+
+		//std::cerr << "UpdateCurrents" << std::endl;
+		UpdateCurrents(currentStart, currentEnd);
+
+		//std::cerr << "DoPostCurrentUpdates" << std::endl;
+		DoPostCurrentUpdates();
+
+		//std::cerr << "Apply2Current" << std::endl;
+		Apply2Current(Op->m_sycl_queue);
+
+		++numTS;
+	}
+	return true;
 }

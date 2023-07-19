@@ -20,6 +20,7 @@
 
 #include <sycl/sycl.hpp>
 #include "engine.h"
+#include "extensions/engine_extension.h"
 #include "operator_sycl.h"
 
 class Engine_sycl : public Engine
@@ -34,65 +35,118 @@ public:
 	virtual unsigned int GetNumberOfTimesteps() {return numTS;};
 
 	//this access functions muss be overloaded by any new engine using a different storage model
-	inline virtual FDTD_FLOAT GetVolt( unsigned int n, unsigned int x, unsigned int y, unsigned int z ) const
+	inline FDTD_FLOAT GetVolt( unsigned int n, unsigned int x, unsigned int y, unsigned int z ) const
 	{
 		SYCL_N_3DArray<sycl::float4> &f4_volt = *f4_volt_ptr;
 		return f4_volt(n, x, y, z%numVectors)[z/numVectors];
 	}
 
-	inline virtual FDTD_FLOAT GetVolt( unsigned int n, const unsigned int pos[3] ) const
+	inline FDTD_FLOAT GetVoltSYCL( unsigned int n, unsigned int x, unsigned int y, unsigned int z ) const
+	{
+		SYCL_N_3DArray<sycl::float4> &f4_volt = *f4_volt_ptr;
+		return f4_volt(n, x, y, z%numVectors)[z/numVectors];
+	}
+
+	inline FDTD_FLOAT GetVolt( unsigned int n, const unsigned int pos[3] ) const
 	{
 		SYCL_N_3DArray<sycl::float4> &f4_volt = *f4_volt_ptr;
 		return f4_volt(n, pos[0], pos[1], pos[2]%numVectors)[pos[2]/numVectors];
 	}
 
-	inline virtual FDTD_FLOAT GetCurr( unsigned int n, unsigned int x, unsigned int y, unsigned int z ) const
+	inline FDTD_FLOAT GetVoltSYCL( unsigned int n, const unsigned int pos[3] ) const
+	{
+		SYCL_N_3DArray<sycl::float4> &f4_volt = *f4_volt_ptr;
+		return f4_volt(n, pos[0], pos[1], pos[2]%numVectors)[pos[2]/numVectors];
+	}
+
+	inline FDTD_FLOAT GetCurr( unsigned int n, unsigned int x, unsigned int y, unsigned int z ) const
 	{
 		SYCL_N_3DArray<sycl::float4> &f4_curr = *f4_curr_ptr;
 		return f4_curr(n, x, y, z%numVectors)[z/numVectors];
 	}
 
-	inline virtual FDTD_FLOAT GetCurr( unsigned int n, const unsigned int pos[3] ) const
+	inline FDTD_FLOAT GetCurrSYCL( unsigned int n, unsigned int x, unsigned int y, unsigned int z ) const
+	{
+		SYCL_N_3DArray<sycl::float4> &f4_curr = *f4_curr_ptr;
+		return f4_curr(n, x, y, z%numVectors)[z/numVectors];
+	}
+
+	inline  FDTD_FLOAT GetCurr( unsigned int n, const unsigned int pos[3] ) const
 	{
 		SYCL_N_3DArray<sycl::float4> &f4_curr = *f4_curr_ptr;
 		return f4_curr(n, pos[0], pos[1], pos[2]%numVectors)[pos[2]/numVectors];
 	}
 
-	inline virtual void SetVolt( unsigned int n, unsigned int x, unsigned int y, unsigned int z, FDTD_FLOAT value)
+	inline  FDTD_FLOAT GetCurrSYCL( unsigned int n, const unsigned int pos[3] ) const
+	{
+		SYCL_N_3DArray<sycl::float4> &f4_curr = *f4_curr_ptr;
+		return f4_curr(n, pos[0], pos[1], pos[2]%numVectors)[pos[2]/numVectors];
+	}
+
+	inline void SetVolt( unsigned int n, unsigned int x, unsigned int y, unsigned int z, FDTD_FLOAT value)
 	{
 		SYCL_N_3DArray<sycl::float4> &f4_volt = *f4_volt_ptr;
 		f4_volt(n, x, y, z%numVectors)[z/numVectors]=value;
 	}
 
-	inline virtual void SetVolt( unsigned int n, const unsigned int pos[3], FDTD_FLOAT value )
+	inline void SetVoltSYCL( unsigned int n, unsigned int x, unsigned int y, unsigned int z, FDTD_FLOAT value)
+	{
+		SYCL_N_3DArray<sycl::float4> &f4_volt = *f4_volt_ptr;
+		f4_volt(n, x, y, z%numVectors)[z/numVectors]=value;
+	}
+
+	inline void SetVolt( unsigned int n, const unsigned int pos[3], FDTD_FLOAT value )
 	{
 		SYCL_N_3DArray<sycl::float4> &f4_volt = *f4_volt_ptr;
 		f4_volt(n, pos[0], pos[1], pos[2]%numVectors)[pos[2]/numVectors]=value;
 	}
 
-	inline virtual void SetCurr( unsigned int n, unsigned int x, unsigned int y, unsigned int z, FDTD_FLOAT value)
+	inline void SetVoltSYCL( unsigned int n, const unsigned int pos[3], FDTD_FLOAT value )
+	{
+		SYCL_N_3DArray<sycl::float4> &f4_volt = *f4_volt_ptr;
+		f4_volt(n, pos[0], pos[1], pos[2]%numVectors)[pos[2]/numVectors]=value;
+	}
+
+	inline void SetCurr( unsigned int n, unsigned int x, unsigned int y, unsigned int z, FDTD_FLOAT value)
 	{
 		SYCL_N_3DArray<sycl::float4> &f4_curr = *f4_curr_ptr;
 		f4_curr(n, x, y, z%numVectors)[z/numVectors]=value;
 	}
 
-	inline virtual void SetCurr( unsigned int n, const unsigned int pos[3], FDTD_FLOAT value )
+	inline void SetCurrSYCL( unsigned int n, unsigned int x, unsigned int y, unsigned int z, FDTD_FLOAT value)
+	{
+		SYCL_N_3DArray<sycl::float4> &f4_curr = *f4_curr_ptr;
+		f4_curr(n, x, y, z%numVectors)[z/numVectors]=value;
+	}
+
+	inline void SetCurr( unsigned int n, const unsigned int pos[3], FDTD_FLOAT value )
 	{
 		SYCL_N_3DArray<sycl::float4> &f4_curr = *f4_curr_ptr;
 		f4_curr(n, pos[0], pos[1], pos[2]%numVectors)[pos[2]/numVectors]=value;
 	}
 
+	inline void SetCurrSYCL( unsigned int n, const unsigned int pos[3], FDTD_FLOAT value )
+	{
+		SYCL_N_3DArray<sycl::float4> &f4_curr = *f4_curr_ptr;
+		f4_curr(n, pos[0], pos[1], pos[2]%numVectors)[pos[2]/numVectors]=value;
+	}
+
+	virtual void Apply2Voltages(sycl::queue Q);
+	virtual void Apply2Current(sycl::queue Q);
+
 protected:
 	Engine_sycl(const Operator_sycl* op);
 	const Operator_sycl* Op;
 
+	virtual void InitExtensions();
 	virtual void UpdateVoltages(unsigned int start[3], unsigned int stop[3]);
 	virtual void UpdateCurrents(unsigned int start[3], unsigned int stop[3]);
+	virtual bool IterateTS(unsigned int iterTS);
 
 	unsigned int numVectors;
 
 private:
-	void UpdateVoltagesKernel(
+	static void UpdateVoltagesKernel(
 	        const SYCL_N_3DArray<sycl::float4>& volt,
 	        const SYCL_N_3DArray<sycl::float4>& curr,
 	        const SYCL_N_3DArray<sycl::float4>& vv,
@@ -100,7 +154,7 @@ private:
 	        int x, int y, int z
 	);
 
-	void UpdateCurrentsKernel(
+	static void UpdateCurrentsKernel(
 	        const SYCL_N_3DArray<sycl::float4>& curr,
 	        const SYCL_N_3DArray<sycl::float4>& volt,
 	        const SYCL_N_3DArray<sycl::float4>& iv,

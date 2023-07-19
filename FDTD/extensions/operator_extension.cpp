@@ -52,3 +52,14 @@ void Operator_Extension::ShowStat(ostream &ostr) const
 {
 	ostr << "--- " << GetExtensionName() << " ---" << endl;
 }
+
+void Operator_Extension::InitializeSYCL(sycl::queue Q)
+{
+	// If this method gets called, the derived extension either
+	// doesn't need to do anything in this method or the extension
+	// doesn't support SYCL. In the former case, it's a no-op.
+	// In the latter case, the program terminates.
+	//
+	// TODO: add and check a flag to see whether an extension has
+	// SYCL support.
+}

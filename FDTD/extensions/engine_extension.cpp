@@ -66,6 +66,17 @@ void Engine_Extension::InitializeTiling(std::vector<Range3D> tiles)
 		TilingUnsupportedError();
 }
 
+void Engine_Extension::InitializeSYCL(sycl::queue Q)
+{
+	// If this method gets called, the derived extension either
+	// doesn't need to do anything in this method or the extension
+	// doesn't support SYCL. In the former case, it's a no-op.
+	// In the latter case, the program terminates.
+	//
+	// TODO: add and check a flag to see whether an extension has
+	// SYCL support.
+}
+
 void Engine_Extension::DoPreVoltageUpdates(int threadID)
 {
 	//if this method gets called the derived extension obviously doesn't support multithrading, calling non-MT method...
@@ -117,6 +128,17 @@ void Engine_Extension::Apply2Voltages(int timestep, unsigned int start[3], unsig
 		TilingUnsupportedError();
 }
 
+void Engine_Extension::Apply2Voltages(sycl::queue Q)
+{
+	// If this method gets called, the derived extension either
+	// doesn't need to do anything in this method or the extension
+	// doesn't support SYCL. In the former case, it's a no-op.
+	// In the latter case, the program terminates.
+	//
+	// TODO: add and check a flag to see whether an extension has
+	// SYCL support.
+}
+
 void Engine_Extension::DoPreCurrentUpdates(int threadID)
 {
 	//if this method gets called the derived extension obviously doesn't support multithrading, calling non-MT method...
@@ -166,6 +188,17 @@ void Engine_Extension::Apply2Current(int timestep, unsigned int start[3], unsign
 	// case, it's a no-op. In the latter case, the program terminates.
 	if (!m_TilingSupported)
 		TilingUnsupportedError();
+}
+
+void Engine_Extension::Apply2Current(sycl::queue Q)
+{
+	// If this method gets called, the derived extension either
+	// doesn't need to do anything in this method or the extension
+	// doesn't support SYCL. In the former case, it's a no-op.
+	// In the latter case, the program terminates.
+	//
+	// TODO: add and check a flag to see whether an extension has
+	// SYCL support.
 }
 
 bool Engine_Extension::operator< (const Engine_Extension& other)

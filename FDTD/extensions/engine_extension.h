@@ -30,6 +30,7 @@
 
 #include <string>
 #include "tools/tiling.h"
+#include <sycl/sycl.hpp>
 
 class Operator_Extension;
 class Engine;
@@ -53,6 +54,10 @@ public:
 	// used only by the tiling engine.
 	virtual void InitializeTiling(std::vector<Range3D> tiles);
 
+	// In the GPU-accelerated SYCL engine, it's the responsibility of the engine
+	// to copy the necessary data the GPU.
+	virtual void InitializeSYCL(sycl::queue Q);
+
 	//! This method will be called __before__ the main engine does the usual voltage updates. This method may __not__ change the engine voltages!!!
 	virtual void DoPreVoltageUpdates() {}
 	virtual void DoPreVoltageUpdates(int threadID);
@@ -65,6 +70,7 @@ public:
 	virtual void Apply2Voltages() {}
 	virtual void Apply2Voltages(int threadID);
 	virtual void Apply2Voltages(int timestep, unsigned int start[3], unsigned int stop[3]);
+	virtual void Apply2Voltages(sycl::queue Q);
 
 	//! This method will be called __before__ the main engine does the usual current updates. This method may __not__ change the engine current!!!
 	virtual void DoPreCurrentUpdates() {}
@@ -78,6 +84,7 @@ public:
 	virtual void Apply2Current() {}
 	virtual void Apply2Current(int threadID);
 	virtual void Apply2Current(int timestep, unsigned int start[3], unsigned int stop[3]);
+	virtual void Apply2Current(sycl::queue Q);
 
 	//! Set the Engine to this extension. This will usually done automatically by Engine::AddExtension
 	virtual void SetEngine(Engine* eng) {m_Eng=eng;}

@@ -20,7 +20,9 @@
 
 #include "engine_extension.h"
 #include "FDTD/engine.h"
+#include "FDTD/engine_sycl.h"
 #include "FDTD/operator.h"
+#include <sycl/sycl.hpp>
 
 class Operator_Ext_Excitation;
 
@@ -32,8 +34,36 @@ public:
 
 	virtual void Apply2Voltages();
 	virtual void Apply2Current();
+
 	virtual void Apply2Voltages(int timestep, unsigned int start[3], unsigned int stop[3]);
 	virtual void Apply2Current(int timestep, unsigned int start[3], unsigned int stop[3]);
+
+	virtual void Apply2Voltages(sycl::queue Q);
+	virtual void Apply2Current(sycl::queue Q);
+
+	virtual void InitializeSYCL(sycl::queue Q);
+	static void Apply2VoltagesSYCLKernel(
+		Engine_sycl* eng,
+		int n,
+		int p,
+		int numTS, int length,
+		FDTD_FLOAT* exc_volt, int exc_pos,
+		unsigned int* Volt_index[3],
+		unsigned short* Volt_dir,
+		FDTD_FLOAT* Volt_amp,
+		unsigned int* Volt_delay
+	);
+	static void Apply2CurrentSYCLKernel(
+		Engine_sycl* eng,
+		int n,
+		int p,
+		int numTS, int length,
+		FDTD_FLOAT* exc_curr, int exc_pos,
+		unsigned int* Curr_index[3],
+		unsigned short* Curr_dir,
+		FDTD_FLOAT* Curr_amp,
+		unsigned int* Curr_delay
+	);
 
 protected:
 	Operator_Ext_Excitation* m_Op_Exc;

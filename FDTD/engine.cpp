@@ -261,29 +261,29 @@ bool Engine::IterateTS(unsigned int iterTS)
 	{
 		//voltage updates with extensions
 		//std::cerr << "DoPreVoltageUpdates" << std::endl;
-		//DoPreVoltageUpdates();
+		DoPreVoltageUpdates();
 
 		//std::cerr << "UpdateVoltages" << std::endl;
 		UpdateVoltages(voltageStart, voltageEnd);
 
 		//std::cerr << "DoPostVoltageUpdates" << std::endl;
-		//DoPostVoltageUpdates();
+		DoPostVoltageUpdates();
 
 		//std::cerr << "Apply2Voltages" << std::endl;
-		//Apply2Voltages();
+		Apply2Voltages();
 
 		//current updates with extensions
 		//std::cerr << "DoPreVoltageUpdates" << std::endl;
-		//DoPreCurrentUpdates();
+		DoPreCurrentUpdates();
 
 		//std::cerr << "UpdateCurrents" << std::endl;
 		UpdateCurrents(currentStart, currentEnd);
 
 		//std::cerr << "DoPostCurrentUpdates" << std::endl;
-		//DoPostCurrentUpdates();
+		DoPostCurrentUpdates();
 
 		//std::cerr << "Apply2Current" << std::endl;
-		//Apply2Current();
+		Apply2Current();
 
 		++numTS;
 	}

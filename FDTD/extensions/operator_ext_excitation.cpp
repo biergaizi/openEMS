@@ -137,13 +137,14 @@ bool Operator_Ext_Excitation::BuildExtension()
 	CSProperties* prop=NULL;
 
 	unsigned int numLines[] = {m_Op->GetNumberOfLines(0,true),m_Op->GetNumberOfLines(1,true),m_Op->GetNumberOfLines(2,true)};
-	for (pos[2]=0; pos[2]<numLines[2]; ++pos[2])
+	for (pos[0]=0; pos[0]<numLines[0]; ++pos[0])
 	{
 		for (pos[1]=0; pos[1]<numLines[1]; ++pos[1])
 		{
-			vector<CSPrimitives*> vPrims = m_Op->GetPrimitivesBoundBox(-1, pos[1], pos[2], CSProperties::EXCITATION);
-			for (pos[0]=0; pos[0]<numLines[0]; ++pos[0])
+			for (pos[2]=0; pos[2]<numLines[2]; ++pos[2])
 			{
+				vector<CSPrimitives*> vPrims = m_Op->GetPrimitivesBoundBox(-1, pos[1], pos[2], CSProperties::EXCITATION);
+
 				//electric field excite
 				for (int n=0; n<3; ++n)
 				{
@@ -347,6 +348,112 @@ void Operator_Ext_Excitation::setupCurrentExcitation( vector<unsigned int> const
 		++Curr_Count_Dir[Curr_dir[i]];
 	}
 
+}
+
+void Operator_Ext_Excitation::InitializeSYCL(sycl::queue Q)
+{
+	std::cerr << "Volt_Count: ";
+	std::cerr << Volt_Count << std::endl;
+
+	std::cerr << "Curr_Count: ";
+	std::cerr << Curr_Count << std::endl;
+
+	std::cerr << "Copying Volt_index" << std::endl;
+	for (int n=0; n<3; n++)
+	{
+		if (Volt_Count != 0)
+		{
+			unsigned int* Volt_index_row = sycl::malloc_device<unsigned int>(Volt_Count, Q);
+			Q.submit([&](sycl::handler& h) {
+				h.memcpy(Volt_index_row, Volt_index[n], Volt_Count * sizeof(unsigned int));
+			});
+			Volt_index[n] = Volt_index_row;
+			//Q.prefetch(Volt_index_row, Volt_Count * sizeof(unsigned int));
+		}
+		else {
+			Volt_index[n] = NULL;
+		}
+	}
+	//Q.prefetch(Volt_index_sycl, 3 * sizeof(unsigned int *));
+
+	std::cerr << "Copying Volt delay, amp, dir" << std::endl;
+	unsigned int* sycl_volt_delay = sycl::malloc_device<unsigned int>(Volt_Count, Q);
+	FDTD_FLOAT* sycl_volt_amp = sycl::malloc_device<FDTD_FLOAT>(Volt_Count, Q);
+	unsigned short* sycl_volt_dir = sycl::malloc_device<unsigned short>(Volt_Count, Q);
+
+	std::cerr << "Copying Volt delay" << std::endl;
+	Q.submit([&](sycl::handler& h) {
+		h.memcpy(sycl_volt_delay, Volt_delay, Volt_Count * sizeof(unsigned int));
+	});
+	Q.wait();
+
+	std::cerr << "Copying Volt amp" << std::endl;
+	Q.submit([&](sycl::handler& h) {
+		h.memcpy(sycl_volt_amp, Volt_amp, Volt_Count * sizeof(FDTD_FLOAT));
+	});
+	Q.wait();
+
+	std::cerr << "Copying Volt dir" << std::endl;
+	Q.submit([&](sycl::handler& h) {
+		h.memcpy(sycl_volt_dir, Volt_dir, Volt_Count * sizeof(unsigned short));
+	});
+	Q.wait();
+
+	// TODO: free host memory
+	Volt_delay = sycl_volt_delay;
+	Volt_amp = sycl_volt_amp;
+	Volt_dir = sycl_volt_dir;
+
+	std::cerr << "Copying Curr_index" << std::endl;
+	for (int n=0; n<3; n++)
+	{
+		std::cerr << Curr_Count << std::endl;
+		if (Curr_Count != 0)
+		{
+			unsigned int* Curr_index_row = sycl::malloc_device<unsigned int>(Curr_Count, Q);
+			Q.submit([&](sycl::handler& h) {
+				h.memcpy(Curr_index_row, Curr_index[n], Curr_Count * sizeof(unsigned int));
+			});
+			Curr_index[n] = Curr_index_row;
+			Q.prefetch(Curr_index_row, Curr_Count * sizeof(unsigned int));
+		}
+		else
+		{
+			Curr_index[n] = NULL;
+		}
+	}
+	//Q.prefetch(Curr_index_sycl, 3 * sizeof(unsigned int *));
+
+	unsigned int* sycl_curr_delay = sycl::malloc_device<unsigned int>(Curr_Count, Q);
+	FDTD_FLOAT* sycl_curr_amp = sycl::malloc_device<FDTD_FLOAT>(Curr_Count, Q);
+	unsigned short* sycl_curr_dir = sycl::malloc_device<unsigned short>(Curr_Count, Q);
+
+	std::cerr << "Copying Curr delay" << std::endl;
+	Q.submit([&](sycl::handler& h) {
+		h.memcpy(sycl_curr_delay, Curr_delay, Curr_Count * sizeof(unsigned int));
+	});
+	Q.wait();
+
+	std::cerr << "Copying Curr amp" << std::endl;
+	Q.submit([&](sycl::handler& h) {
+		h.memcpy(sycl_curr_amp, Curr_amp, Curr_Count * sizeof(FDTD_FLOAT));
+	});
+	Q.wait();
+
+	std::cerr << "Copying Curr dir" << std::endl;
+	Q.submit([&](sycl::handler& h) {
+		h.memcpy(sycl_curr_dir, Curr_dir, Curr_Count * sizeof(unsigned short));
+	});
+	Q.wait();
+
+	// TODO: free host memory
+	Curr_delay = sycl_curr_delay;
+	Curr_amp = sycl_curr_amp;
+	Curr_dir = sycl_curr_dir;
+
+	Q.wait();
+
+	std::cerr << "Everything has copied!" << std::endl;
 }
 
 Engine_Extension* Operator_Ext_Excitation::CreateEngineExtention()
