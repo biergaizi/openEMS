@@ -70,6 +70,14 @@ if (WITH_MPI)
 	message(STATUS "Found MPI. INCLUDE " ${MPI_INCLUDE_PATH})
 endif()
 
+if (WITH_KOKKOS)
+	ADD_DEFINITIONS(-DKOKKOS_SUPPORT)
+	find_package(Kokkos REQUIRED)
+	set(KOKKOS_LIBRARIES "Kokkos::kokkos")
+else()
+	set(KOKKOS_LIBRARIES "")
+endif()
+
 # Set locations of extra CMake modules
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${openEMS_SOURCE_DIR}/cmake/Modules/")
 
@@ -212,6 +220,7 @@ TARGET_LINK_LIBRARIES( openEMS
   ${Boost_LIBRARIES}
   ${vtk_LIBS}
   ${MPI_LIBRARIES}
+  ${KOKKOS_LIBRARIES}
 )
 
 if (WIN32)

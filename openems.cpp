@@ -46,6 +46,11 @@
 #include <boost/version.hpp> // only for BOOST_LIB_VERSION
 #include <vtkVersion.h>
 
+#ifdef KOKKOS_SUPPORT
+#include "FDTD/engine_kokkos.h"
+#include "FDTD/operator_kokkos.h"
+#endif
+
 //external libs
 #include "tinyxml.h"
 #include "ContinuousStructure.h"
@@ -81,7 +86,11 @@ openEMS::openEMS()
 	m_OverSampling = 4;
 	m_CellConstantMaterial=false;
 
-	m_engine = EngineType_Multithreaded; //default engine type
+#ifdef KOKKOS_SUPPORT
+	m_engine = EngineType_Kokkos; //default engine type
+#else
+	m_engine = EngineType_Multithreaded;
+#endif
 	m_engine_numThreads = 0;
 
 	m_Abort = false;
@@ -217,6 +226,14 @@ bool openEMS::parseCommandLineArgument( const char *argv )
 		m_engine = EngineType_Multithreaded;
 		return true;
 	}
+#ifdef KOKKOS_SUPPORT
+	else if (strcmp(argv,"--engine=kokkos")==0)
+	{
+		cout << "openEMS - enabled Kokkos engine" << endl;
+		m_engine = EngineType_Kokkos;
+		return true;
+	}
+#endif
 	else if (strncmp(argv,"--numThreads=",13)==0)
 	{
 		this->SetNumberOfThreads(atoi(argv+13));
@@ -226,7 +243,11 @@ bool openEMS::parseCommandLineArgument( const char *argv )
 	else if (strcmp(argv,"--engine=fastest")==0)
 	{
 		cout << "openEMS - enabled multithreading engine" << endl;
+#ifdef KOKKOS_SUPPORT
+		m_engine = EngineType_Kokkos;
+#else
 		m_engine = EngineType_Multithreaded;
+#endif
 		return true;
 	}
 	else if (strcmp(argv,"--no-simulation")==0)
@@ -629,6 +650,12 @@ bool openEMS::SetupOperator()
 	{
 		FDTD_Op = Operator_Multithread::New(m_engine_numThreads);
 	}
+#ifdef KOKKOS_SUPPORT
+	else if (m_engine == EngineType_Kokkos)
+	{
+		FDTD_Op = Operator_Kokkos::New();
+	}
+#endif
 	else
 	{
 		FDTD_Op = Operator::New();

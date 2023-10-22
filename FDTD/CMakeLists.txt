@@ -7,9 +7,17 @@ if (WITH_MPI)
      )
 endif()
 
+if (WITH_KOKKOS)
+  set(KOKKOS_SOURCES
+     ${CMAKE_CURRENT_SOURCE_DIR}/operator_kokkos.cpp
+     ${CMAKE_CURRENT_SOURCE_DIR}/engine_kokkos.cpp
+     )
+endif()
+
 set(SOURCES
   ${SOURCES}
   ${MPI_SOURCES}
+  ${KOKKOS_SOURCES}
   ${CMAKE_CURRENT_SOURCE_DIR}/engine.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/operator.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/engine_multithread.cpp
