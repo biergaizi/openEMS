@@ -139,7 +139,7 @@ bool Operator_SSE_Compressed::CompressOperator()
 
 				map<SSE_coeff,unsigned int>::iterator it;
 				it = lookUpMap.find(c);
-				if (it == lookUpMap.end())
+				if (it == lookUpMap.end() || true)
 				{
 					// not found -> insert
 					unsigned int index = f4_vv_Compressed[0].size();
