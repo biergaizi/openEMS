@@ -215,16 +215,16 @@ bool Engine::IterateTS(unsigned int iterTS)
 	for (unsigned int iter=0; iter<iterTS; ++iter)
 	{
 		//voltage updates with extensions
-		DoPreVoltageUpdates();
+		//DoPreVoltageUpdates();
 		UpdateVoltages(0,numLines[0]);
-		DoPostVoltageUpdates();
-		Apply2Voltages();
+		//DoPostVoltageUpdates();
+		//Apply2Voltages();
 
 		//current updates with extensions
-		DoPreCurrentUpdates();
+		//DoPreCurrentUpdates();
 		UpdateCurrents(0,numLines[0]-1);
-		DoPostCurrentUpdates();
-		Apply2Current();
+		//DoPostCurrentUpdates();
+		//Apply2Current();
 
 		++numTS;
 	}
