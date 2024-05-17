@@ -33,6 +33,9 @@ public:
 	virtual void DoPreCurrentUpdates();
 
 protected:
+	template <typename Engine> void DoPreVoltageUpdatesImpl(Engine* eng);
+	template <typename Engine> void DoPreCurrentUpdatesImpl(Engine* eng);
+
 	Operator_Ext_LorentzMaterial* m_Op_Ext_Lor;
 
 	//! ADE Lorentz voltages
