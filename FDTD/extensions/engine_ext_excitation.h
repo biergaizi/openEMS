@@ -21,6 +21,7 @@
 #include "engine_extension.h"
 #include "FDTD/engine.h"
 #include "FDTD/operator.h"
+#include "engine_extension_dispatcher.h"
 
 class Operator_Ext_Excitation;
 
@@ -34,6 +35,9 @@ public:
 	virtual void Apply2Current();
 
 protected:
+	template <typename Engine> void Apply2VoltagesImpl(Engine *eng);
+	template <typename Engine> void Apply2CurrentImpl(Engine *eng);
+
 	Operator_Ext_Excitation* m_Op_Exc;
 };
 
