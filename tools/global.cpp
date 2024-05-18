@@ -31,48 +31,77 @@ Global::Global()
 	m_VerboseLevel = 0;
 }
 
-void Global::ShowArguments(ostream& ostr, string front)
+namespace po = boost::program_options;
+
+po::options_description
+Global::cmdArgs()
 {
-	ostr << front << "--showProbeDiscretization\tShow probe discretization information" << endl;
-	ostr << front << "--nativeFieldDumps\t\tDump all fields using the native field components" << endl;
-	ostr << front << "-v,-vv,-vvv\t\t\tSet debug level: 1 to 3" << endl;
+	po::options_description optdesc("Additional global arguments");
+	optdesc.add_options()
+		("showProbeDiscretization", "Show probe discretization information")
+		("nativeFieldDumps",        "Dump all fields using the native field "
+		                            "components")
+		("verbose",                 po::value<unsigned int>()->default_value(0),
+									"Verbose level, select debug level 1 to 3, "
+		                            "also accept -v, -vv, -vvv");
+	return optdesc;
 }
 
 //! \brief This function initializes the object
-bool Global::parseCommandLineArgument( const char *argv )
+void Global::parseCommandLineArguments(int argc, const char* argv[])
 {
-	if (!argv)
-		return false;
+	// Hack: boost::program_options doesn't support repeated "-vv"
+	// and "-vvv" syntax, it also doesn't support omitting the
+	// value of a parameter, both causes validation failure. It's
+	// not worthwhile to write a custom validator just for exactly
+	// a single special case. Just change argv[] to avoid them.
+	// This must be the first parseCommandLineArguments() to call
+	// in main().
+	for (int i = 0; i < argc; i++)
+	{
+		const char* arg = argv[i];
 
-	if (strcmp(argv,"--showProbeDiscretization")==0)
+		if (strcmp(arg, "--verbose") == 0)
+		{
+			argv[i] = "--verbose=1";
+		}
+		if (strcmp(arg, "-v") == 0)
+		{
+			argv[i] = "--verbose=1";
+		}
+		if (strcmp(arg, "-vv") == 0)
+		{
+			argv[i] = "--verbose=2";
+		}
+		else if (strcmp(arg, "-vvv") == 0)
+		{
+			argv[i] = "--verbose=3";
+		}
+	}
+
+	po::options_description opts = cmdArgs();
+	po::variables_map map;
+	po::store(po::command_line_parser(argc, argv).options(opts).
+		allow_unregistered().run(), map  // ignore unknown options
+	);
+	po::notify(map);
+
+	if (map.count("showProbeDiscretization"))
 	{
 		cout << "openEMS - showing probe discretization information" << endl;
 		m_showProbeDiscretization = true;
-		return true;
 	}
-	else if (strcmp(argv,"--nativeFieldDumps")==0)
+	if (map.count("nativeFieldDumps"))
 	{
 		cout << "openEMS - dumping all fields using the native field components" << endl;
 		m_nativeFieldDumps = true;
-		return true;
 	}
-	else if (strcmp(argv,"-v")==0)
+	if (map.count("verbose"))
 	{
-		cout << "openEMS - verbose level 1" << endl;
-		m_VerboseLevel = 1;
-		return true;
+		m_VerboseLevel = map["verbose"].as<unsigned int>();
 	}
-	else if (strcmp(argv,"-vv")==0)
-	{
-		cout << "openEMS - verbose level 2" << endl;
-		m_VerboseLevel = 2;
-		return true;
+
+	if (m_VerboseLevel > 0) {
+		cout << "openEMS - verbose level " << m_VerboseLevel << endl;
 	}
-	else if (strcmp(argv,"-vvv")==0)
-	{
-		cout << "openEMS - verbose level 3" << endl;
-		m_VerboseLevel = 3;
-		return true;
-	}
-	return false;
 }

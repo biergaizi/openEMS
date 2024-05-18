@@ -100,6 +100,8 @@ openEMS::openEMS()
 		m_PML_size[n] = 8;
 		m_Mur_v_ph[n] = 0;
 	}
+
+	collectCommandLineArguments();
 }
 
 openEMS::~openEMS()
@@ -122,129 +124,183 @@ void openEMS::Reset()
 	m_Exc=0;
 }
 
+boost::program_options::options_description
+openEMS::cmdArgs()
+{
+	namespace po = boost::program_options;
+	int opt;
+
+	po::options_description optdesc("Options");
+	optdesc.add_options()
+		("help,h",          "Show this help message and exit")
+		("debug-dumps",     "Disable all field dumps for faster simulation")
+		("debug-material",  "Dump material distribution to a vtk file for "
+							"debugging")
+		("debug-PEC",       "Dump metal distribution to a vtk file for debugging")
+		("debug-operator",  "Dump operator to vtk file for debugging")
+		("debug-boxes",     "Dump e.g. probe boxes to vtk file for debugging")
+		("debug-CSX",       "Write CSX geometry file to debugCSX.xml")
+#ifdef MPI_SUPPPORT
+		("engine",          po::value<std::string>()->default_value("fastest"),
+		                    "Choose engine type (fastest, basic, sse, "
+							"sse-compressed, MPI, multithreaded)")
+#else
+		("engine",          po::value<std::string>()->default_value("fastest"),
+		                    "Choose engine type (fastest, basic, sse, "
+							"sse-compressed, multithreaded)")
+#endif
+		("engine=fastest",  "fastest available engine (default)")
+		("engine=basic",    "basic FDTD engine")
+		("engine=sse",      "engine using sse vector extensions")
+		("engine=sse-compressed", "engine using compressed operator + sse "
+		                          "vector extensions ")
+#ifdef MPI_SUPPORT
+		("engine=multithreaded",  "engine using compressed operator + sse "
+		                          "vector extensions + MPI + multithreading")
+#else
+		("engine=multithreaded",  "engine using compressed operator + sse "
+		                          "vector extensions + multithreading")
+#endif
+		("numThreads",      po::value<int>(&opt)->default_value(0),
+		                    "Force use n threads for multithreaded engine "
+							"(needs: --engine=multithreaded)")
+		("no-simulation",   "only run preprocessing; do not simulate")
+		("dump-statistics", "dump simulation statistics to '"
+							__OPENEMS_RUN_STAT_FILE__ "' and '"
+							__OPENEMS_STAT_FILE__ "'");
+	return optdesc;
+}
+
+void openEMS::collectCommandLineArguments()
+{
+	// openEMS has different modules and it's the best if each
+	// module parses their own options, yet, we still need to
+	// know all options globally. Thus, command line arguments
+	// parsing is a three-stage process.
+	//
+	// 1. Each module provides a boost::program_options::options_description
+	// to us using the method cmdArgs(). The cmdArgs() must be idempotent
+	// without side-effect since they may be called multiple times.
+	// We collect them all into into m_allopts.
+	//
+	// 2. We parse m_allopts, but it's a dummy operation just to
+	// catch invalid arguments. It's also used to generate global
+	// help messages.
+	//
+	// 3. Each module's parseCommandLineArgument() is called when
+	// needed,  which is responsible for parsing their own arguments
+	// only. Unknown options must be ignored.
+	m_allopts.add(cmdArgs());
+	m_allopts.add(g_settings.cmdArgs());
+}
+
 void openEMS::showUsage()
 {
-	cout << " Usage: openEMS <FDTD_XML_FILE> [<options>...]" << endl << endl;
-	cout << " <options>" << endl;
-	cout << "\t--disable-dumps\t\tDisable all field dumps for faster simulation" << endl;
-	cout << "\t--debug-material\tDump material distribution to a vtk file for debugging" << endl;
-	cout << "\t--debug-PEC\t\tDump metal distribution to a vtk file for debugging" << endl;
-	cout << "\t--debug-operator\tDump operator to vtk file for debugging" << endl;
-	cout << "\t--debug-boxes\t\tDump e.g. probe boxes to vtk file for debugging" << endl;
-	cout << "\t--debug-CSX\t\tWrite CSX geometry file to debugCSX.xml" << endl;
-	cout << "\t--engine=<type>\t\tChoose engine type" << endl;
-	cout << "\t\t--engine=fastest\t\tfastest available engine (default)" << endl;
-	cout << "\t\t--engine=basic\t\t\tbasic FDTD engine" << endl;
-	cout << "\t\t--engine=sse\t\t\tengine using sse vector extensions" << endl;
-	cout << "\t\t--engine=sse-compressed\t\tengine using compressed operator + sse vector extensions" << endl;
-#ifdef MPI_SUPPORT
-	cout << "\t\t--engine=MPI\t\t\tengine using compressed operator + sse vector extensions + MPI parallel processing" << endl;
-	cout << "\t\t--engine=multithreaded\t\tengine using compressed operator + sse vector extensions + MPI + multithreading" << endl;
-#else
-	cout << "\t\t--engine=multithreaded\t\tengine using compressed operator + sse vector extensions + multithreading" << endl;
-#endif
-	cout << "\t--numThreads=<n>\tForce use n threads for multithreaded engine (needs: --engine=multithreaded)" << endl;
-	cout << "\t--no-simulation\t\tonly run preprocessing; do not simulate" << endl;
-	cout << "\t--dump-statistics\tdump simulation statistics to '" << __OPENEMS_RUN_STAT_FILE__ << "' and '" << __OPENEMS_STAT_FILE__ << "'" << endl;
-	cout << "\n\t Additional global arguments " << endl;
-	g_settings.ShowArguments(cout,"\t");
-	cout << endl;
+	cout << " Usage: openEMS <FDTD_XML_FILE> [<options>...]" << endl;
+	cout << " " << m_allopts << endl;
 }
 
 //! \brief processes a command line argument
 //! \return true if argument is known
 //! \return false if argument is unknown
-bool openEMS::parseCommandLineArgument( const char *argv )
+void openEMS::parseCommandLineArguments(int argc, const char* argv[])
 {
-	if (!argv)
-		return false;
+	// TODO: make argv case insensitive
+	namespace po = boost::program_options;
 
-	if (strcmp(argv,"--disable-dumps")==0)
+	// We collect and do a dummy parsing all command lines options
+	// from every module, but only to provide help messages and to
+	// detect unknown options.
+	po::variables_map allmap;
+	po::store(po::parse_command_line(argc, argv, m_allopts), allmap);
+
+	// It's still the responsibility of each module to handle its own options,
+	// so we ignore the global allmap. Instead, we only handle our own options.
+	po::options_description opts = cmdArgs();
+	po::variables_map map;
+	po::store(po::command_line_parser(argc, argv).options(opts).
+		allow_unregistered().run(), map  // ignore unknown options
+	);
+	po::notify(map);
+
+	if (map.count("help"))
+	{
+		showUsage();
+		std::exit(0);
+	}
+	if (map.count("disable-dumps"))
 	{
 		cout << "openEMS - disabling all field dumps" << endl;
 		SetEnableDumps(false);
-		return true;
 	}
-	else if (strcmp(argv,"--debug-material")==0)
+	if (map.count("debug-material"))
 	{
 		cout << "openEMS - dumping material to 'material_dump.vtk'" << endl;
 		DebugMaterial();
-		return true;
 	}
-	else if (strcmp(argv,"--debug-operator")==0)
+	if (map.count("debug-operator"))
 	{
 		cout << "openEMS - dumping operator to 'operator_dump.vtk'" << endl;
 		DebugOperator();
-		return true;
 	}
-	else if (strcmp(argv,"--debug-boxes")==0)
+	if (map.count("debug-boxes"))
 	{
 		cout << "openEMS - dumping boxes to 'box_dump*.vtk'" << endl;
 		DebugBox();
-		return true;
 	}
-	else if (strcmp(argv,"--debug-PEC")==0)
+	if (map.count("debug-PEC"))
 	{
 		cout << "openEMS - dumping PEC info to 'PEC_dump.vtk'" << endl;
 		DebugPEC();
-		return true;
 	}
-	else if (strcmp(argv,"--debug-CSX")==0)
+	if (map.count("debug-CSX"))
 	{
 		cout << "openEMS - dumping CSX geometry to 'debugCSX.xml'" << endl;
 		DebugCSX();
-		return true;
 	}
-	else if (strcmp(argv,"--engine=basic")==0)
+	if (map.count("engine"))
 	{
-		cout << "openEMS - enabled basic engine" << endl;
-		m_engine = EngineType_Basic;
-		return true;
+		std::string engineOpt = map["engine"].as<std::string>();
+
+		if (engineOpt == "basic")
+		{
+			cout << "openEMS - enabled basic engine" << endl;
+			m_engine = EngineType_Basic;
+		}
+		else if (engineOpt == "sse")
+		{
+			cout << "openEMS - enabled sse engine" << endl;
+			m_engine = EngineType_SSE;
+		}
+		else if (engineOpt == "sse-compressed")
+		{
+			cout << "openEMS - enabled compressed sse engine" << endl;
+			m_engine = EngineType_SSE_Compressed;
+		}
+		else if (engineOpt == "multithreaded" || engineOpt == "fastest")
+		{
+			cout << "openEMS - enabled multithreading" << endl;
+			m_engine = EngineType_Multithreaded;
+		}
 	}
-	else if (strcmp(argv,"--engine=sse")==0)
+	if (map.count("numThreads"))
 	{
-		cout << "openEMS - enabled sse engine" << endl;
-		m_engine = EngineType_SSE;
-		return true;
+		this->SetNumberOfThreads(map["numThreads"].as<int>());
+		cout << "openEMS - fixed number of threads: "
+		     << m_engine_numThreads << endl;
 	}
-	else if (strcmp(argv,"--engine=sse-compressed")==0)
-	{
-		cout << "openEMS - enabled compressed sse engine" << endl;
-		m_engine = EngineType_SSE_Compressed;
-		return true;
-	}
-	else if (strcmp(argv,"--engine=multithreaded")==0)
-	{
-		cout << "openEMS - enabled multithreading" << endl;
-		m_engine = EngineType_Multithreaded;
-		return true;
-	}
-	else if (strncmp(argv,"--numThreads=",13)==0)
-	{
-		this->SetNumberOfThreads(atoi(argv+13));
-		cout << "openEMS - fixed number of threads: " << m_engine_numThreads << endl;
-		return true;
-	}
-	else if (strcmp(argv,"--engine=fastest")==0)
-	{
-		cout << "openEMS - enabled multithreading engine" << endl;
-		m_engine = EngineType_Multithreaded;
-		return true;
-	}
-	else if (strcmp(argv,"--no-simulation")==0)
+	if (map.count("no-simulation"))
 	{
 		cout << "openEMS - disabling simulation => preprocessing only" << endl;
 		m_no_simulation = true;
-		return true;
 	}
-	else if (strcmp(argv,"--dump-statistics")==0)
+	if (map.count("dump-statistics"))
 	{
-		cout << "openEMS - dump simulation statistics to '" << __OPENEMS_RUN_STAT_FILE__ << "' and '" << __OPENEMS_STAT_FILE__ << "'" << endl;
+		cout << "openEMS - dump simulation statistics to '"
+		     << __OPENEMS_RUN_STAT_FILE__ << "' and '"
+			 << __OPENEMS_STAT_FILE__ << "'" << endl;
 		m_DumpStats = true;
-		return true;
 	}
-
-	return false;
 }
 
 void openEMS::SetNumberOfThreads(int val)

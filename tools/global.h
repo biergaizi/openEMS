@@ -19,6 +19,7 @@
 #define GLOBAL_H
 
 #include <sstream>
+#include <boost/program_options.hpp>
 #define _USE_MATH_DEFINES
 
 #include "openems_global.h"
@@ -31,11 +32,11 @@ class OPENEMS_EXPORT Global
 public:
 	Global();
 
-	//! Show all possible (global) command line arguments
-	void ShowArguments(std::ostream& ostr, std::string front=std::string());
+	//! Provide supported (global) command line arguments
+	boost::program_options::options_description cmdArgs();
 
 	//! Parse the given command line arguments
-	bool parseCommandLineArgument( const char *argv );
+	void parseCommandLineArguments(int argc, const char* argv[]);
 
 	bool showProbeDiscretization() const {return m_showProbeDiscretization;}
 

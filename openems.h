@@ -27,6 +27,7 @@
 #include <time.h>
 #include <vector>
 
+#include <boost/program_options.hpp>
 #include "openems_global.h"
 
 #define __OPENEMS_STAT_FILE__ "openEMS_stats.txt"
@@ -51,8 +52,8 @@ public:
 	openEMS();
 	virtual ~openEMS();
 
-	virtual bool parseCommandLineArgument( const char *argv );
-	static void showUsage();
+	virtual void parseCommandLineArguments(int argc, const char* argv[]);
+	virtual void showUsage();
 
 	bool ParseFDTDSetup(std::string file);
 	virtual bool Parse_XML_FDTDSetup(TiXmlElement* openEMSxml);
@@ -116,6 +117,11 @@ public:
 	void SetVerboseLevel(int level);
 
 protected:
+	boost::program_options::options_description cmdArgs();
+
+	void collectCommandLineArguments();
+	boost::program_options::options_description m_allopts;
+
 	bool CylinderCoords;
 	std::vector<double> m_CC_MultiGrid;
 
